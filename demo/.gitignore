@@ -1,0 +1,13 @@
+/build*
+/import*
+/reader1.tmp
+/reader2.tmp
+/reader3.tmp
+/reader4.tmp
+/writer1.res
+/writer2.res
+/writer3.res
+/writer4.res
+/test_xml.xml
+/test_serialize.xml
+/*.rdf

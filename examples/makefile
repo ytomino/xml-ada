@@ -8,8 +8,8 @@ GNATMAKE=gnatmake
 GCC=$(dir $(shell which $(GNATMAKE)))gcc
 BUILDDIR=build
 IMPORTDIR:=import
-ifneq ($(findstring apple-darwin,$(TARGET)),)
-INCDIR=/usr/include/libxml2
+ifneq ($(findstring darwin,$(TARGET)),)
+HFLAGS=-I/usr/include/libxml2
 endif
 else
 GNATMAKE=$(TARGET)-gnatmake
@@ -17,8 +17,8 @@ GCC=$(TARGET)-gcc
 BUILDDIR=build-$(TARGET)
 IMPORTDIR:=import-$(TARGET)
 ifneq ($(findstring freebsd,$(TARGET)),)
-INCDIR=/usr/local/i686-pc-freebsd7/local/include/libxml2
-LFLAGS=-L/usr/local/i686-pc-freebsd7/local/lib
+LFLAGS=
+HFLAGS=-I/usr/local/i686-pc-freebsd7/include/libxml2
 endif
 endif
 
@@ -51,7 +51,7 @@ $(BUILDDIR):
 
 ifneq ($(IMPORTDIR),)
 $(IMPORTDIR): $(SOURCEDIR)/import.h
-	headmaster --to ada -gcc=$(GCC) $(addprefix -isystem ,$(INCDIR)) -p -D $(IMPORTDIR) $+
+	headmaster --to ada -gcc=$(GCC) $(HFLAGS) -p -D $(IMPORTDIR) $+
 endif
 
 clean:

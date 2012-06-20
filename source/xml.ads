@@ -1,3 +1,4 @@
+pragma Ada_2012;
 with Ada.IO_Exceptions;
 private with Ada.Finalization;
 private with C.libxml.encoding;
@@ -83,7 +84,7 @@ package XML is
 	end Event_Types;
 	type Event_Type is new Event_Types.Event_Type;
 	
-	type Event (Event_Type : XML.Event_Type) is record
+	type Event (Event_Type : XML.Event_Type := No_Event) is record
 		case Event_Type is
 			when Element_Start | Attribute | Processing_Instruction | Document_Type =>
 				Name : not null access constant String;
@@ -140,6 +141,21 @@ package XML is
 	procedure Read_Until_Element_End (
 		Object : in out Reader);
 	
+	type Parsing_Entry_Type is limited private;
+	pragma Preelaborable_Initialization (Parsing_Entry_Type);
+	
+	type Event_Reference_Type (Element : not null access constant Event) is
+		null record
+		with Implicit_Dereference => Element;
+	
+	function Value (Parsing_Entry : Parsing_Entry_Type)
+		return Event_Reference_Type;
+	pragma Inline (Value);
+	
+	procedure Read (
+		Object : in out Reader;
+		Parsing_Entry : out Parsing_Entry_Type);
+	
 	-- writer
 	
 	type Writer (<>) is limited private;
@@ -176,14 +192,36 @@ private
 	
 	type String_Access is access String;
 	
+	type String_Constraint is record
+		First : Positive;
+		Last : Natural;
+	end record;
+	pragma Suppress_Initialization (String_Constraint);
+	
 	-- reader
 	
 	type Reader_State is (
-		Normal,
+		Next,
+		Remaining,
 		Empty_Element); -- have to supplement Element_End
 	pragma Discard_Names (Reader_State);
 	
 	procedure Next (Object : in out Reader);
+	
+	type Parsed_Data_Type is limited record
+		Event : aliased XML.Event;
+		Name_Constraint : aliased String_Constraint;
+		Value_Constraint : aliased String_Constraint;
+		Public_Id_Constraint : aliased String_Constraint;
+		System_Id_Constraint : aliased String_Constraint;
+		Subset_Constraint : aliased String_Constraint;
+		Content_Constraint : aliased String_Constraint;
+	end record;
+	pragma Suppress_Initialization (Parsed_Data_Type);
+	
+	type Parsing_Entry_Type is limited record -- may be controlled type
+		Data : aliased Parsed_Data_Type;
+	end record;
 	
 	package Readers is
 		
@@ -203,7 +241,7 @@ private
 		
 		type Reader is new Ada.Finalization.Limited_Controlled with record
 			Raw : aliased C.libxml.xmlreader.xmlTextReaderPtr := null;
-			State : aliased Reader_State := Normal;
+			State : aliased Reader_State := Next;
 			Version : aliased String_Access := null;
 		end record;
 		

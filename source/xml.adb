@@ -40,6 +40,27 @@ package body XML is
 		return Result;
 	end To_String;
 	
+	-- dirty trick
+	function Copy_String_Access (
+		S : not null String_Access;
+		Constraint : not null access String_Constraint)
+		return String_Access
+	is
+		type Fat_Type is record
+			Data : System.Address;
+			Constraints : System.Address;
+		end record;
+		Fat : Fat_Type;
+		Result : String_Access;
+		for Fat'Address use Result'Address;
+	begin
+		Fat.Data := S.all'Address;
+		Fat.Constraints := Constraint.all'Address;
+		Constraint.First := S'First;
+		Constraint.Last := S'Last;
+		return Result;
+	end Copy_String_Access;
+	
 	Version_Checked : Boolean := False;
 	
 	Error_Handler_Installed : Boolean := False;
@@ -107,6 +128,236 @@ package body XML is
 		No_Specific => null,
 		No => No_Image (No_Image'First)'Access,
 		Yes => Yes_Image (Yes_Image'First)'Access);
+	
+	-- reading one event
+	
+	procedure Read (
+		Object : in out Reader;
+		Parsed_Data : out Parsed_Data_Type) is
+	begin
+		Clear_Last_Error;
+		case State (Object).all is
+			when Next | Remaining =>
+				if State (Object).all = Remaining then
+					Next (Object);
+				end if;
+				declare
+					Node_Type : constant C.signed_int :=
+						C.libxml.xmlreader.xmlTextReaderNodeType (Raw (Object).all);
+				begin
+					if Node_Type < 0 then
+						Raise_Last_Error;
+					else
+						case Node_Type is
+							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_NONE)
+							=>
+								Parsed_Data.Event := (Event_Type => No_Event);
+								State (Object).all := Remaining;
+							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_ATTRIBUTE)
+							=>
+								declare
+									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
+										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
+									Name : aliased String (
+										1 ..
+										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
+									for Name'Address use C_Name.all'Address;
+									C_Value : constant C.libxml.xmlstring.xmlChar_const_ptr :=
+										C.libxml.xmlreader.xmlTextReaderConstValue (Raw (Object).all);
+									Value : aliased String (
+										1 ..
+										Natural (C.string.strlen (To_char_const_ptr (C_Value))));
+									for Value'Address use C_Value.all'Address;
+								begin
+									Parsed_Data.Event := (
+										Event_Type => Attribute,
+										Name => Copy_String_Access (
+											Name'Unrestricted_Access,
+											Parsed_Data.Name_Constraint'Access),
+										Value => Copy_String_Access (
+											Value'Unrestricted_Access,
+											Parsed_Data.Value_Constraint'Access));
+								end;
+								declare
+									Moved : constant C.signed_int :=
+										C.libxml.xmlreader.xmlTextReaderMoveToNextAttribute (
+											Raw (Object).all);
+								begin
+									if Moved < 0 then
+										Raise_Last_Error;
+									elsif Moved > 0 then
+										State (Object).all := Next; -- more attributes
+									else
+										-- end of attributes
+										if C.libxml.xmlreader.xmlTextReaderMoveToElement (
+											Raw (Object).all) < 0
+										then
+											Raise_Last_Error;
+										end if;
+										if C.libxml.xmlreader.xmlTextReaderIsEmptyElement (
+											Raw (Object).all) > 0
+										then
+											State (Object).all := Empty_Element;
+										else -- move to children
+											State (Object).all := Remaining;
+										end if;
+									end if;
+								end;
+							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_ELEMENT)
+							=>
+								declare
+									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
+										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
+									Name : aliased String (
+										1 ..
+										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
+									for Name'Address use C_Name.all'Address;
+								begin
+									Parsed_Data.Event := (
+										Event_Type => Element_Start,
+										Name => Copy_String_Access (
+											Name'Unrestricted_Access,
+											Parsed_Data.Name_Constraint'Access));
+								end;
+								if C.libxml.xmlreader.xmlTextReaderHasAttributes (
+									Raw (Object).all) > 0
+								then
+									State (Object).all := Next;
+									if C.libxml.xmlreader.xmlTextReaderMoveToFirstAttribute (
+										Raw (Object).all) < 0
+									then
+										Raise_Last_Error;
+									end if;
+								elsif C.libxml.xmlreader.xmlTextReaderIsEmptyElement (
+									Raw (Object).all) > 0
+								then
+									State (Object).all := Empty_Element;
+								else -- move to children
+									State (Object).all := Remaining;
+								end if;
+							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_TEXT)
+							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_CDATA)
+							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_COMMENT)
+							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_WHITESPACE)
+							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE)
+							=>
+								declare
+									C_Content : constant C.libxml.xmlstring.xmlChar_const_ptr :=
+										C.libxml.xmlreader.xmlTextReaderConstValue (Raw (Object).all);
+									Content : aliased String (
+										1 ..
+										Natural (C.string.strlen (To_char_const_ptr (C_Content))));
+									for Content'Address use C_Content.all'Address;
+									Content_Access : constant String_Access := Copy_String_Access (
+										Content'Unrestricted_Access,
+										Parsed_Data.Content_Constraint'Access);
+								begin
+									case Node_Type is
+										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+											C.libxml.xmlreader.XML_READER_TYPE_TEXT)
+										=>
+											Parsed_Data.Event := (
+												Event_Type => Text,
+												Content => Content_Access);
+										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+											C.libxml.xmlreader.XML_READER_TYPE_CDATA)
+										=>
+											Parsed_Data.Event := (
+												Event_Type => CDATA,
+												Content => Content_Access);
+										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+											C.libxml.xmlreader.XML_READER_TYPE_COMMENT)
+										=>
+											Parsed_Data.Event := (
+												Event_Type => Comment,
+												Content => Content_Access);
+										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+											C.libxml.xmlreader.XML_READER_TYPE_WHITESPACE)
+										=>
+											Parsed_Data.Event := (
+												Event_Type => Whitespace,
+												Content => Content_Access);
+										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+											C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE)
+										=>
+											Parsed_Data.Event := (
+												Event_Type => Significant_Whitespace,
+												Content => Content_Access);
+										when others =>
+											pragma Assert (False);
+											null;
+									end case;
+								end;
+								State (Object).all := Remaining;
+							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_PROCESSING_INSTRUCTION)
+							=>
+								declare
+									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
+										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
+									Name : aliased String (
+										1 ..
+										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
+									for Name'Address use C_Name.all'Address;
+								begin
+									Parsed_Data.Event := (
+										Event_Type => Processing_Instruction,
+										Name => Copy_String_Access (
+											Name'Unrestricted_Access,
+											Parsed_Data.Name_Constraint'Access));
+									-- it's not able to get attributes info with libxml2 (?)
+									pragma Assert (
+										C.libxml.xmlreader.xmlTextReaderHasAttributes (Raw (Object).all)
+										= 0);
+								end;
+								State (Object).all := Remaining;
+							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_DOCUMENT_TYPE)
+							=>
+								declare
+									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
+										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
+									Name : aliased String (
+										1 ..
+										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
+									for Name'Address use C_Name.all'Address;
+								begin
+									Parsed_Data.Event := (
+										Event_Type => Document_Type,
+										Name => Name'Unrestricted_Access,
+										Public_Id => null,
+										System_Id => null,
+										Subset => null);
+									-- it's not able to get extra DTD info with libxml2 (?)
+									pragma Assert (
+										C.libxml.xmlreader.xmlTextReaderHasAttributes (Raw (Object).all)
+										= 0);
+								end;
+								State (Object).all := Remaining;
+							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+								C.libxml.xmlreader.XML_READER_TYPE_END_ELEMENT)
+							=>
+								Parsed_Data.Event := (Event_Type => Element_End);
+								State (Object).all := Remaining;
+							when others =>
+								raise Program_Error
+									with "in XML.Read, unimplemented" & Node_Type'Img;
+						end case;
+					end if;
+				end;
+			when Empty_Element =>
+				Parsed_Data.Event := (Event_Type => Element_End);
+				State (Object).all := Remaining;
+		end case;
+	end Read;
 	
 	-- implementation
 	
@@ -306,216 +557,19 @@ package body XML is
 	
 	procedure Read (
 		Object : in out Reader;
-		Process : not null access procedure (Event : in XML.Event)) is
+		Process : not null access procedure (Event : in XML.Event))
+	is
+		Parsed_Data : Parsed_Data_Type;
 	begin
-		Clear_Last_Error;
-		case State (Object).all is
-			when Normal =>
-				declare
-					Node_Type : constant C.signed_int :=
-						C.libxml.xmlreader.xmlTextReaderNodeType (Raw (Object).all);
-				begin
-					if Node_Type < 0 then
-						Raise_Last_Error;
-					else
-						case Node_Type is
-							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_NONE)
-							=>
-								Process ((Event_Type => No_Event));
-								Next (Object);
-							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_ATTRIBUTE)
-							=>
-								declare
-									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
-									Name : aliased String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
-									for Name'Address use C_Name.all'Address;
-									C_Value : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstValue (Raw (Object).all);
-									Value : aliased String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Value))));
-									for Value'Address use C_Value.all'Address;
-								begin
-									Process ((
-										Event_Type => Attribute,
-										Name => Name'Unrestricted_Access,
-										Value => Value'Unrestricted_Access));
-								end;
-								declare
-									Moved : constant C.signed_int :=
-										C.libxml.xmlreader.xmlTextReaderMoveToNextAttribute (
-											Raw (Object).all);
-								begin
-									if Moved < 0 then
-										Raise_Last_Error;
-									elsif Moved > 0 then
-										null; -- more attributes
-									else
-										-- end of attributes
-										if C.libxml.xmlreader.xmlTextReaderMoveToElement (
-											Raw (Object).all) < 0
-										then
-											Raise_Last_Error;
-										end if;
-										if C.libxml.xmlreader.xmlTextReaderIsEmptyElement (
-											Raw (Object).all) > 0
-										then
-											State (Object).all := Empty_Element;
-										else
-											Next (Object);
-										end if;
-									end if;
-								end;
-							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_ELEMENT)
-							=>
-								declare
-									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
-									Name : aliased String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
-									for Name'Address use C_Name.all'Address;
-								begin
-									Process ((
-										Event_Type => Element_Start,
-										Name => Name'Unrestricted_Access));
-								end;
-								if C.libxml.xmlreader.xmlTextReaderHasAttributes (
-									Raw (Object).all) > 0
-								then
-									if C.libxml.xmlreader.xmlTextReaderMoveToFirstAttribute (
-										Raw (Object).all) < 0
-									then
-										Raise_Last_Error;
-									end if;
-								elsif C.libxml.xmlreader.xmlTextReaderIsEmptyElement (
-									Raw (Object).all) > 0
-								then
-									State (Object).all := Empty_Element;
-								else
-									Next (Object);
-								end if;
-							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_TEXT)
-							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_CDATA)
-							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_COMMENT)
-							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_WHITESPACE)
-							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE)
-							=>
-								declare
-									C_Content : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstValue (Raw (Object).all);
-									Content : aliased String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Content))));
-									for Content'Address use C_Content.all'Address;
-								begin
-									case Node_Type is
-										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_TEXT)
-										=>
-											Process ((
-												Event_Type => Text,
-												Content => Content'Unrestricted_Access));
-										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_CDATA)
-										=>
-											Process ((
-												Event_Type => CDATA,
-												Content => Content'Unrestricted_Access));
-										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_COMMENT)
-										=>
-											Process ((
-												Event_Type => Comment,
-												Content => Content'Unrestricted_Access));
-										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_WHITESPACE)
-										=>
-											Process ((
-												Event_Type => Whitespace,
-												Content => Content'Unrestricted_Access));
-										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE)
-										=>
-											Process ((
-												Event_Type => Significant_Whitespace,
-												Content => Content'Unrestricted_Access));
-										when others =>
-											pragma Assert (False);
-											null;
-									end case;
-								end;
-								Next (Object);
-							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_PROCESSING_INSTRUCTION)
-							=>
-								declare
-									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
-									Name : aliased String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
-									for Name'Address use C_Name.all'Address;
-								begin
-									Process ((
-										Event_Type => Processing_Instruction,
-										Name => Name'Unrestricted_Access));
-									-- it's not able to get attributes info with libxml2 (?)
-									pragma Assert (
-										C.libxml.xmlreader.xmlTextReaderHasAttributes (Raw (Object).all)
-										= 0);
-								end;
-								Next (Object);
-							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_DOCUMENT_TYPE)
-							=>
-								declare
-									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
-									Name : aliased String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
-									for Name'Address use C_Name.all'Address;
-								begin
-									Process ((
-										Event_Type => Document_Type,
-										Name => Name'Unrestricted_Access,
-										Public_Id => null,
-										System_Id => null,
-										Subset => null));
-									-- it's not able to get extra DTD info with libxml2 (?)
-									pragma Assert (
-										C.libxml.xmlreader.xmlTextReaderHasAttributes (Raw (Object).all)
-										= 0);
-								end;
-								Next (Object);
-							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_END_ELEMENT)
-							=>
-								Process ((Event_Type => Element_End));
-								Next (Object);
-							when others =>
-								raise Program_Error
-									with "in XML.Read, unimplemented" & Node_Type'Img;
-						end case;
-					end if;
-				end;
-			when Empty_Element =>
-				Process ((Event_Type => Element_End));
-				State (Object).all := Normal;
-				Next (Object);
-		end case;
+		Read (Object, Parsed_Data);
+		Process (Parsed_Data.Event);
+	end Read;
+	
+	procedure Read (
+		Object : in out Reader;
+		Parsing_Entry : out Parsing_Entry_Type) is
+	begin
+		Read (Object, Parsing_Entry.Data);
 	end Read;
 	
 	procedure Read_Until_Element_End (
@@ -523,33 +577,31 @@ package body XML is
 	begin
 		loop
 			declare
-				type T is (Skip, Ended, Recursive);
-				pragma Discard_Names (T);
-				S : T := Skip;
-				procedure Process (Event : in XML.Event) is
-				begin
-					case Event.Event_Type is
-						when Element_Start =>
-							S := Recursive;
-						when Element_End =>
-							S := Ended;
-						when others =>
-							null;
-					end case;
-				end Process;
+				T : Event_Type;
 			begin
-				Read (Object, Process'Access);
-				case S is
-					when Skip =>
-						null;
-					when Ended =>
-						exit;
-					when Recursive =>
+				declare
+					Parsed_Data : Parsed_Data_Type;
+				begin
+					Read (Object, Parsed_Data);
+					T := Parsed_Data.Event.Event_Type;
+				end;
+				case T is
+					when Element_Start =>
 						Read_Until_Element_End (Object);
+					when Element_End =>
+						exit;
+					when others =>
+						null;
 				end case;
 			end;
 		end loop;
 	end Read_Until_Element_End;
+	
+	function Value (Parsing_Entry : Parsing_Entry_Type)
+		return Event_Reference_Type is
+	begin
+		return (Element => Parsing_Entry.Data.Event'Access);
+	end Value;
 	
 	procedure Next (Object : in out Reader) is
 	begin

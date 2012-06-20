@@ -82,17 +82,22 @@ package body XML.Streams is
 				P_URI := C_URI (C_URI'First)'Access;
 			end if;
 			return Result : Reader do
-					Result.Raw_Reader := C.libxml.xmlreader.xmlReaderForIO (
+				declare
+					Re : C.libxml.xmlreader.xmlTextReaderPtr
+						renames Raw (Result).all;
+				begin
+					Re := C.libxml.xmlreader.xmlReaderForIO (
 						Read_Handler'Access,
 						null,
 						C.void_ptr (Conv.To_Address (Conv.Object_Pointer (Stream))),
 						P_URI,
 						P_Encoding,
 						0);
-					if Result.Raw_Reader = null then
+					if Re = null then
 						raise Use_Error;
 					end if;
-					Next (Result);
+				end;
+				Next (Result);
 			end return;
 		end;
 	end Create;
@@ -118,8 +123,12 @@ package body XML.Streams is
 				raise Use_Error;
 			end if;
 			return Result : Writer do
-					Result.Raw_Writer := C.libxml.xmlwriter.xmlNewTextWriter (Buffer);
-					if Result.Raw_Writer = null then
+				declare
+					Wr : C.libxml.xmlwriter.xmlTextWriterPtr
+						renames Raw (Result).all;
+				begin
+					Wr := C.libxml.xmlwriter.xmlNewTextWriter (Buffer);
+					if Wr = null then
 						declare
 							Dummy : C.signed_int;
 							pragma Unreferenced (Dummy);
@@ -128,11 +137,12 @@ package body XML.Streams is
 						end;
 						raise Use_Error;
 					end if;
-					Write_Document_Start (
-						Result,
-						Version => Version,
-						Encoding => Encoding,
-						Standalone => Standalone);
+				end;
+				Write_Document_Start (
+					Result,
+					Version => Version,
+					Encoding => Encoding,
+					Standalone => Standalone);
 			end return;
 		end;
 	end Create;

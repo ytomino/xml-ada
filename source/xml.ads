@@ -159,7 +159,7 @@ package XML is
 	procedure Flush (Object : in out Writer);
 	procedure Finish (Object : in out Writer);
 	
-	--  exceptions
+	-- exceptions
 	
 	Status_Error : exception
 		renames Ada.IO_Exceptions.Status_Error;
@@ -183,22 +183,37 @@ private
 		Empty_Element); -- have to supplement Element_End
 	pragma Discard_Names (Reader_State);
 	
-	type Reader is new Ada.Finalization.Limited_Controlled with record
-		Raw_Reader : C.libxml.xmlreader.xmlTextReaderPtr := null;
-		State : Reader_State := Normal;
-		Version : String_Access := null;
-	end record;
-	
 	procedure Next (Object : in out Reader);
 	
-	overriding procedure Finalize (Object : in out Reader);
+	package Readers is
+		
+		type Reader is limited private;
+		
+		function Raw (X : Reader)
+			return not null access C.libxml.xmlreader.xmlTextReaderPtr;
+		pragma Inline (Raw);
+		
+		function State (X : Reader) return not null access Reader_State;
+		pragma Inline (State);
+		
+		function Version (X : Reader) return not null access String_Access;
+		pragma Inline (Version);
+		
+	private
+		
+		type Reader is new Ada.Finalization.Limited_Controlled with record
+			Raw : aliased C.libxml.xmlreader.xmlTextReaderPtr := null;
+			State : aliased Reader_State := Normal;
+			Version : aliased String_Access := null;
+		end record;
+		
+		overriding procedure Finalize (Object : in out Reader);
+	
+	end Readers;
+	
+	type Reader is new Readers.Reader;
 	
 	-- writer
-	
-	type Writer is new Ada.Finalization.Limited_Controlled with record
-		Raw_Writer : C.libxml.xmlwriter.xmlTextWriterPtr := null;
-		Finished : Boolean := False;
-	end record;
 	
 	procedure Write_Document_Start (
 		Object : in out Writer;
@@ -208,7 +223,29 @@ private
 	procedure Write_Document_End (
 		Object : in out Writer);
 	
-	overriding procedure Finalize (Object : in out Writer);
+	package Writers is
+		
+		type Writer is limited private;
+		
+		function Raw (X : Writer)
+			return not null access C.libxml.xmlwriter.xmlTextWriterPtr;
+		pragma Inline (Raw);
+		
+		function Finished (X : Writer) return not null access Boolean;
+		pragma Inline (Finished);
+		
+	private
+		
+		type Writer is new Ada.Finalization.Limited_Controlled with record
+			Raw : aliased C.libxml.xmlwriter.xmlTextWriterPtr := null;
+			Finished : aliased Boolean := False;
+		end record;
+		
+		overriding procedure Finalize (Object : in out Writer);
+		
+	end Writers;
+	
+	type Writer is new Writers.Writer;
 	
 	-- exceptions
 	

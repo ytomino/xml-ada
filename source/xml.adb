@@ -184,17 +184,22 @@ package body XML is
 				P_URI := C_URI (C_URI'First)'Access;
 			end if;
 			return Result : Reader do
-					Result.Raw_Reader := C.libxml.xmlreader.xmlReaderForIO (
+				declare
+					Re : C.libxml.xmlreader.xmlTextReaderPtr
+						renames Raw (Result).all;
+				begin
+					Re := C.libxml.xmlreader.xmlReaderForIO (
 						Read_Handler'Access,
 						null,
 						C.void_ptr (Input.all'Address),
 						P_URI,
 						P_Encoding,
 						0);
-					if Result.Raw_Reader = null then
+					if Re = null then
 						raise Use_Error;
 					end if;
-					Next (Result);
+				end;
+				Next (Result);
 			end return;
 		end;
 	end Create;
@@ -204,7 +209,7 @@ package body XML is
 		Value : in Boolean) is
 	begin
 		if C.libxml.xmlreader.xmlTextReaderSetParserProp (
-			Object.Raw_Reader,
+			Raw (Object).all,
 			C.libxml.xmlreader.xmlParserProperties'Enum_Rep (
 				C.libxml.xmlreader.XML_PARSER_LOADDTD),
 			Boolean'Pos (Value)) < 0
@@ -218,7 +223,7 @@ package body XML is
 		Value : in Boolean) is
 	begin
 		if C.libxml.xmlreader.xmlTextReaderSetParserProp (
-			Object.Raw_Reader,
+			Raw (Object).all,
 			C.libxml.xmlreader.xmlParserProperties'Enum_Rep (
 				C.libxml.xmlreader.XML_PARSER_DEFAULTATTRS),
 			Boolean'Pos (Value)) < 0
@@ -232,7 +237,7 @@ package body XML is
 		Value : in Boolean) is
 	begin
 		if C.libxml.xmlreader.xmlTextReaderSetParserProp (
-			Object.Raw_Reader,
+			Raw (Object).all,
 			C.libxml.xmlreader.xmlParserProperties'Enum_Rep (
 				C.libxml.xmlreader.XML_PARSER_VALIDATE),
 			Boolean'Pos (Value)) < 0
@@ -246,7 +251,7 @@ package body XML is
 		Value : in Boolean) is
 	begin
 		if C.libxml.xmlreader.xmlTextReaderSetParserProp (
-			Object.Raw_Reader,
+			Raw (Object).all,
 			C.libxml.xmlreader.xmlParserProperties'Enum_Rep (
 				C.libxml.xmlreader.XML_PARSER_SUBST_ENTITIES),
 			Boolean'Pos (Value)) < 0
@@ -256,11 +261,13 @@ package body XML is
 	end Set_Substitute_Entities;
 	
 	function Version (Object : Reader) return access constant String is
+		Ve : String_Access
+			renames Version (Object).all;
 	begin
-		if Object.Version = null then
+		if Ve = null then
 			declare
 				C_Version : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-					C.libxml.xmlreader.xmlTextReaderConstXmlVersion (Object.Raw_Reader);
+					C.libxml.xmlreader.xmlTextReaderConstXmlVersion (Raw (Object).all);
 			begin
 				if C_Version /= null then
 					declare
@@ -269,24 +276,24 @@ package body XML is
 							Natural (C.string.strlen (To_char_const_ptr (C_Version))));
 						for A_Version'Address use C_Version.all'Address;
 					begin
-						Object'Unrestricted_Access.Version := new String'(A_Version);
+						Ve := new String'(A_Version);
 					end;
 				end if;
 			end;
 		end if;
-		return Object.Version;
+		return Ve;
 	end Version;
 	
 	function Encoding (Object : Reader) return Encoding_Type is
 	begin
 		return Encoding_Type (C.libxml.encoding.xmlFindCharEncodingHandler (
 			To_char_const_ptr (C.libxml.xmlreader.xmlTextReaderConstEncoding (
-				Object.Raw_Reader))));
+				Raw (Object).all))));
 	end Encoding;
 	
 	function Standalone (Object : Reader) return Standalone_Type is
 		Result : constant C.signed_int :=
-			C.libxml.xmlreader.xmlTextReaderStandalone (Object.Raw_Reader);
+			C.libxml.xmlreader.xmlTextReaderStandalone (Raw (Object).all);
 	begin
 		return Standalone_Type'Enum_Val (Result);
 	end Standalone;
@@ -294,7 +301,7 @@ package body XML is
 	function Base_URI (Object : Reader) return String is
 	begin
 		return To_String (To_char_const_ptr (
-			C.libxml.xmlreader.xmlTextReaderConstBaseUri (Object.Raw_Reader)));
+			C.libxml.xmlreader.xmlTextReaderConstBaseUri (Raw (Object).all)));
 	end Base_URI;
 	
 	procedure Read (
@@ -302,11 +309,11 @@ package body XML is
 		Process : not null access procedure (Event : in XML.Event)) is
 	begin
 		Clear_Last_Error;
-		case Object.State is
+		case State (Object).all is
 			when Normal =>
 				declare
 					Node_Type : constant C.signed_int :=
-						C.libxml.xmlreader.xmlTextReaderNodeType (Object.Raw_Reader);
+						C.libxml.xmlreader.xmlTextReaderNodeType (Raw (Object).all);
 				begin
 					if Node_Type < 0 then
 						Raise_Last_Error;
@@ -322,13 +329,13 @@ package body XML is
 							=>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (Object.Raw_Reader);
+										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
 									Name : aliased String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
 									for Name'Address use C_Name.all'Address;
 									C_Value : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstValue (Object.Raw_Reader);
+										C.libxml.xmlreader.xmlTextReaderConstValue (Raw (Object).all);
 									Value : aliased String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Value))));
@@ -342,7 +349,7 @@ package body XML is
 								declare
 									Moved : constant C.signed_int :=
 										C.libxml.xmlreader.xmlTextReaderMoveToNextAttribute (
-											Object.Raw_Reader);
+											Raw (Object).all);
 								begin
 									if Moved < 0 then
 										Raise_Last_Error;
@@ -351,14 +358,14 @@ package body XML is
 									else
 										-- end of attributes
 										if C.libxml.xmlreader.xmlTextReaderMoveToElement (
-											Object.Raw_Reader) < 0
+											Raw (Object).all) < 0
 										then
 											Raise_Last_Error;
 										end if;
 										if C.libxml.xmlreader.xmlTextReaderIsEmptyElement (
-											Object.Raw_Reader) > 0
+											Raw (Object).all) > 0
 										then
-											Object.State := Empty_Element;
+											State (Object).all := Empty_Element;
 										else
 											Next (Object);
 										end if;
@@ -369,7 +376,7 @@ package body XML is
 							=>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (Object.Raw_Reader);
+										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
 									Name : aliased String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
@@ -380,17 +387,17 @@ package body XML is
 										Name => Name'Unrestricted_Access));
 								end;
 								if C.libxml.xmlreader.xmlTextReaderHasAttributes (
-									Object.Raw_Reader) > 0
+									Raw (Object).all) > 0
 								then
 									if C.libxml.xmlreader.xmlTextReaderMoveToFirstAttribute (
-										Object.Raw_Reader) < 0
+										Raw (Object).all) < 0
 									then
 										Raise_Last_Error;
 									end if;
 								elsif C.libxml.xmlreader.xmlTextReaderIsEmptyElement (
-									Object.Raw_Reader) > 0
+									Raw (Object).all) > 0
 								then
-									Object.State := Empty_Element;
+									State (Object).all := Empty_Element;
 								else
 									Next (Object);
 								end if;
@@ -407,7 +414,7 @@ package body XML is
 							=>
 								declare
 									C_Content : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstValue (Object.Raw_Reader);
+										C.libxml.xmlreader.xmlTextReaderConstValue (Raw (Object).all);
 									Content : aliased String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Content))));
@@ -455,7 +462,7 @@ package body XML is
 							=>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (Object.Raw_Reader);
+										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
 									Name : aliased String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
@@ -466,7 +473,7 @@ package body XML is
 										Name => Name'Unrestricted_Access));
 									-- it's not able to get attributes info with libxml2 (?)
 									pragma Assert (
-										C.libxml.xmlreader.xmlTextReaderHasAttributes (Object.Raw_Reader)
+										C.libxml.xmlreader.xmlTextReaderHasAttributes (Raw (Object).all)
 										= 0);
 								end;
 								Next (Object);
@@ -475,7 +482,7 @@ package body XML is
 							=>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (Object.Raw_Reader);
+										C.libxml.xmlreader.xmlTextReaderConstName (Raw (Object).all);
 									Name : aliased String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
@@ -489,7 +496,7 @@ package body XML is
 										Subset => null));
 									-- it's not able to get extra DTD info with libxml2 (?)
 									pragma Assert (
-										C.libxml.xmlreader.xmlTextReaderHasAttributes (Object.Raw_Reader)
+										C.libxml.xmlreader.xmlTextReaderHasAttributes (Raw (Object).all)
 										= 0);
 								end;
 								Next (Object);
@@ -506,7 +513,7 @@ package body XML is
 				end;
 			when Empty_Element =>
 				Process ((Event_Type => Element_End));
-				Object.State := Normal;
+				State (Object).all := Normal;
 				Next (Object);
 		end case;
 	end Read;
@@ -547,16 +554,36 @@ package body XML is
 	procedure Next (Object : in out Reader) is
 	begin
 		Clear_Last_Error;
-		if C.libxml.xmlreader.xmlTextReaderRead (Object.Raw_Reader) < 0 then
+		if C.libxml.xmlreader.xmlTextReaderRead (Raw (Object).all) < 0 then
 			Raise_Last_Error;
 		end if;
 	end Next;
 	
-	overriding procedure Finalize (Object : in out Reader) is
-	begin
-		C.libxml.xmlreader.xmlFreeTextReader (Object.Raw_Reader);
-		Free (Object.Version);
-	end Finalize;
+	package body Readers is
+		
+		function Raw (X : Reader)
+			return not null access C.libxml.xmlreader.xmlTextReaderPtr is
+		begin
+			return X.Raw'Unrestricted_Access;
+		end Raw;
+		
+		function State (X : Reader) return not null access Reader_State is
+		begin
+			return X.State'Unrestricted_Access;
+		end State;
+		
+		function Version (X : Reader) return not null access String_Access is
+		begin
+			return X.Version'Unrestricted_Access;
+		end Version;
+		
+		overriding procedure Finalize (Object : in out Reader) is
+		begin
+			C.libxml.xmlreader.xmlFreeTextReader (Object.Raw);
+			Free (Object.Version);
+		end Finalize;
+		
+	end Readers;
 	
 	-- writer
 	
@@ -581,8 +608,12 @@ package body XML is
 				raise Use_Error;
 			end if;
 			return Result : Writer do
-					Result.Raw_Writer := C.libxml.xmlwriter.xmlNewTextWriter (Buffer);
-					if Result.Raw_Writer = null then
+				declare
+					Wr : C.libxml.xmlwriter.xmlTextWriterPtr
+						renames Raw (Result).all;
+				begin
+					Wr := C.libxml.xmlwriter.xmlNewTextWriter (Buffer);
+					if Wr = null then
 						declare
 							Dummy : C.signed_int;
 							pragma Unreferenced (Dummy);
@@ -591,11 +622,12 @@ package body XML is
 						end;
 						raise Use_Error;
 					end if;
-					Write_Document_Start (
-						Result,
-						Version => Version,
-						Encoding => Encoding,
-						Standalone => Standalone);
+				end;
+				Write_Document_Start (
+					Result,
+					Version => Version,
+					Encoding => Encoding,
+					Standalone => Standalone);
 			end return;
 		end;
 	end Create;
@@ -603,7 +635,7 @@ package body XML is
 	procedure Set_Indent (Object : in out Writer; Indent : in Natural) is
 	begin
 		if C.libxml.xmlwriter.xmlTextWriterSetIndent (
-			Object.Raw_Writer,
+			Raw (Object).all,
 			C.signed_int (Indent)) < 0
 		then
 			raise Use_Error;
@@ -616,7 +648,7 @@ package body XML is
 		for C_Indent'Address use Z_Indent'Address;
 	begin
 		if C.libxml.xmlwriter.xmlTextWriterSetIndentString (
-			Object.Raw_Writer,
+			Raw (Object).all,
 			C_Indent (C_Indent'First)'Access) < 0
 		then
 			raise Use_Error;
@@ -625,7 +657,7 @@ package body XML is
 	
 	procedure Write (Object : in out Writer; Event : in XML.Event) is
 	begin
-		if Object.Finished then
+		if Finished (Object).all then
 			raise Status_Error;
 		end if;
 		case Event.Event_Type is
@@ -640,7 +672,7 @@ package body XML is
 				begin
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterStartElement (
-						Object.Raw_Writer,
+						Raw (Object).all,
 						C_Name (C_Name'First)'Access) < 0
 					then
 						Raise_Last_Error;
@@ -659,7 +691,7 @@ package body XML is
 				begin
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteAttribute (
-						Object.Raw_Writer,
+						Raw (Object).all,
 						C_Name (C_Name'First)'Access,
 						C_Value (C_Value'First)'Access) < 0
 					then
@@ -675,7 +707,7 @@ package body XML is
 				begin
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteString (
-						Object.Raw_Writer,
+						Raw (Object).all,
 						C_Content (C_Content'First)'Access) < 0
 					then
 						Raise_Last_Error;
@@ -690,7 +722,7 @@ package body XML is
 				begin
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteCDATA (
-						Object.Raw_Writer,
+						Raw (Object).all,
 						C_Content (C_Content'First)'Access) < 0
 					then
 						Raise_Last_Error;
@@ -711,7 +743,7 @@ package body XML is
 				begin
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteComment (
-						Object.Raw_Writer,
+						Raw (Object).all,
 						C_Content (C_Content'First)'Access) < 0
 					then
 						Raise_Last_Error;
@@ -772,7 +804,7 @@ package body XML is
 						end if;
 						Clear_Last_Error;
 						if C.libxml.xmlwriter.xmlTextWriterWriteDocType (
-							Object.Raw_Writer,
+							Raw (Object).all,
 							C_Name (C_Name'First)'Access,
 							P_Public_Id,
 							P_System_Id,
@@ -793,7 +825,7 @@ package body XML is
 			when Element_End =>
 				Clear_Last_Error;
 				if C.libxml.xmlwriter.xmlTextWriterEndElement (
-					Object.Raw_Writer) < 0
+					Raw (Object).all) < 0
 				then
 					Raise_Last_Error;
 				end if;
@@ -806,17 +838,19 @@ package body XML is
 	
 	procedure Flush (Object : in out Writer) is
 	begin
-		if C.libxml.xmlwriter.xmlTextWriterFlush (Object.Raw_Writer) < 0 then
+		if C.libxml.xmlwriter.xmlTextWriterFlush (Raw (Object).all) < 0 then
 			raise Use_Error;
 		end if;
 	end Flush;
 	
 	procedure Finish (Object : in out Writer) is
+		Fi : Boolean
+			renames Finished (Object).all;
 	begin
-		if Object.Finished then
+		if Fi then
 			raise Status_Error;
 		else
-			Object.Finished := True;
+			Fi := True;
 			Write_Document_End (Object);
 		end if;
 	end Finish;
@@ -850,7 +884,7 @@ package body XML is
 			end if;
 			Clear_Last_Error;
 			if C.libxml.xmlwriter.xmlTextWriterStartDocument (
-				Object.Raw_Writer,
+				Raw (Object).all,
 				P_Version,
 				P_Encoding,
 				Standalone_Image (Standalone)) < 0
@@ -864,18 +898,33 @@ package body XML is
 		Object : in out Writer) is
 	begin
 		Clear_Last_Error;
-		if C.libxml.xmlwriter.xmlTextWriterEndDocument (Object.Raw_Writer) < 0 then
+		if C.libxml.xmlwriter.xmlTextWriterEndDocument (Raw (Object).all) < 0 then
 			Raise_Last_Error;
 		end if;
 	end Write_Document_End;
 	
-	overriding procedure Finalize (Object : in out Writer) is
-	begin
-		if not Object.Finished then
-			Write_Document_End (Object);
-		end if;
-		C.libxml.xmlwriter.xmlFreeTextWriter (Object.Raw_Writer);
-	end Finalize;
+	package body Writers is
+		
+		function Raw (X : Writer)
+			return not null access C.libxml.xmlwriter.xmlTextWriterPtr is
+		begin
+			return X.Raw'Unrestricted_Access;
+		end Raw;
+		
+		function Finished (X : Writer) return not null access Boolean is
+		begin
+			return X.Finished'Unrestricted_Access;
+		end Finished;
+		
+		overriding procedure Finalize (Object : in out Writer) is
+		begin
+			if not Object.Finished then
+				Write_Document_End (XML.Writer (Object));
+			end if;
+			C.libxml.xmlwriter.xmlFreeTextWriter (Object.Raw);
+		end Finalize;
+		
+	end Writers;
 	
 	-- exceptions
 	

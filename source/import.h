@@ -9,6 +9,11 @@
 #include <libxml/xmlreader.h>
 #include <libxml/xmlwriter.h>
 
+/* undef the macro returning struct by value */
+#if defined(xmlDefaultSAXLocator)
+#undef xmlDefaultSAXLocator
+#endif
+
 #pragma for Ada overload \
 	void fprintf (FILE *, char const *)
 #pragma for Ada overload \

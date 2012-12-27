@@ -20,6 +20,10 @@ ifneq ($(findstring freebsd,$(TARGET)),)
 LFLAGS=
 HFLAGS=-I/usr/local/i686-pc-freebsd7/include/libxml2
 endif
+ifneq ($(findstring linux,$(TARGET)),)
+LFLAGS=
+HFLAGS=-I/usr/local/i686-pc-linux-gnu/include/libxml2
+endif
 endif
 
 ifneq ($(DRAKE_RTSROOT),)

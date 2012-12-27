@@ -79,6 +79,7 @@ procedure test_reader is
 	pragma Linker_Options ("-lxml2");
 	use type C.char_array;
 	use type C.signed_int;
+	use type C.size_t;
 	use type C.unsigned_int;
 	use type C.libxml.tree.xmlDocPtr;
 	use type C.libxml.xmlreader.xmlTextReaderPtr;
@@ -91,6 +92,53 @@ procedure test_reader is
 		C.libxml.xmlstring.xmlChar_const_ptr);
 	Write_Mode : constant C.char_array := "w" & C.char'Val (0);
 	stdout : C.stdio.FILE_ptr;
+	procedure fwrite (
+		ptr : not null access constant C.char;
+		size : in C.size_t;
+		nitems : in C.size_t;
+		stream : in C.stdio.FILE_ptr)
+	is
+		Dummy_size_t : C.size_t;
+		pragma Unreferenced (Dummy_size_t);
+	begin
+		Dummy_size_t := C.stdio.fwrite (ptr.all'Address, size, nitems, stream);
+	end fwrite;
+	procedure fputs (
+		s : not null access constant C.char;
+		stream : in C.stdio.FILE_ptr)
+	is
+		Dummy_signed_int : C.signed_int;
+		pragma Unreferenced (Dummy_signed_int);
+	begin
+		Dummy_signed_int := C.stdio.fputs (s, stream);
+	end fputs;
+	procedure fputs (
+		s : in C.char_array;
+		stream : in C.stdio.FILE_ptr) is
+	begin
+		fputs (s (s'First)'Access, stream);
+	end fputs;
+	procedure fputd (
+		d : in C.signed_int;
+		stream : in C.stdio.FILE_ptr)
+	is
+		s : C.char_array (0 .. 10);
+		i : C.size_t := s'Last;
+		r : C.signed_int := d;
+	begin
+		if r < 0 then
+			fputs (' ' & C.char'Val (0), stream);
+			r := -r;
+		end if;
+		s (i) := C.char'Val (0);
+		loop
+			i := i - 1;
+			s (i) := C.char'Val (C.char'Pos ('0') + r rem 10);
+			r := r / 10;
+			exit when r = 0;
+		end loop;
+		fputs (s (i)'Access, stream);
+	end fputd;
 	procedure processNode_For_1_and_2 (
 		reader : C.libxml.xmlreader.xmlTextReaderPtr)
 	is
@@ -102,49 +150,26 @@ procedure test_reader is
 			name := To_xmlChar_const_ptr (S1 (S1'First)'Unchecked_Access);
 		end if;
 		value := C.libxml.xmlreader.xmlTextReaderConstValue (reader);
-		declare
-			Format : constant C.char_array :=
-				"%d %d %s %d %d" & C.char'Val (0);
-		begin
-			C.stdio.fprintf (
-				stdout,
-				Format (Format'First)'Access,
-				C.libxml.xmlreader.xmlTextReaderDepth (reader),
-				C.libxml.xmlreader.xmlTextReaderNodeType (reader),
-				To_char_const_ptr (name),
-				C.libxml.xmlreader.xmlTextReaderIsEmptyElement (reader),
-				C.libxml.xmlreader.xmlTextReaderHasValue (reader));
-		end;
+		fputd (C.libxml.xmlreader.xmlTextReaderDepth (reader), stdout);
+		fputs (' ' & C.char'Val (0), stdout);
+		fputd (C.libxml.xmlreader.xmlTextReaderNodeType (reader), stdout);
+		fputs (' ' & C.char'Val (0), stdout);
+		fputs (To_char_const_ptr (name), stdout);
+		fputs (' ' & C.char'Val (0), stdout);
+		fputd (C.libxml.xmlreader.xmlTextReaderIsEmptyElement (reader), stdout);
+		fputs (' ' & C.char'Val (0), stdout);
+		fputd (C.libxml.xmlreader.xmlTextReaderHasValue (reader), stdout);
 		if value = null then
-			declare
-				Format : constant C.char_array :=
-					C.char'Val (10) & C.char'Val (0);
-			begin
-				C.stdio.fprintf (
-					stdout,
-					Format (Format'First)'Access);
-			end;
+			fputs (C.char'Val (10) & C.char'Val (0), stdout);
 		else
 			if C.libxml.xmlstring.xmlStrlen (value) > 40 then
-				declare
-					Format : constant C.char_array :=
-						" %.40s..." & C.char'Val (10) & C.char'Val (0);
-				begin
-					C.stdio.fprintf (
-						stdout,
-						Format (Format'First)'Access,
-						To_char_const_ptr (value));
-				end;
+				fputs (' ' & C.char'Val (0), stdout);
+				fwrite (To_char_const_ptr (value), 1, 40, stdout);
+				fputs ("..." & C.char'Val (10) & C.char'Val (0), stdout);
 			else
-				declare
-					Format : constant C.char_array :=
-						" %s" & C.char'Val (10) & C.char'Val (0);
-				begin
-					C.stdio.fprintf (
-						stdout,
-						Format (Format'First)'Access,
-						To_char_const_ptr (value));
-				end;
+				fputs (' ' & C.char'Val (0), stdout);
+				fputs (To_char_const_ptr (value), stdout);
+				fputs (C.char'Val (10) & C.char'Val (0), stdout);
 			end if;
 		end if;
 	end processNode_For_1_and_2;
@@ -173,26 +198,14 @@ procedure test_reader is
 				end loop;
 				C.libxml.xmlreader.xmlFreeTextReader (reader);
 				if ret /= 0 then
-					declare
-						Format : constant C.char_array :=
-							"%s : failed to parse" & C.char'Val (10) & C.char'Val (0);
-					begin
-						C.stdio.fprintf (
-							C.stdio.stderr,
-							Format (Format'First)'Access,
-							filename);
-					end;
+					fputs (filename, C.stdio.stderr);
+					fputs (" : failed to parse" & C.char'Val (10) & C.char'Val (0),
+						C.stdio.stderr);
 				end if;
 			else
-				declare
-					Format : constant C.char_array :=
-						"Unable to open %s" & C.char'Val (10) & C.char'Val (0);
-				begin
-					C.stdio.fprintf (
-						C.stdio.stderr,
-						Format (Format'First)'Access,
-						filename);
-				end;
+				fputs ("Unable to open " & C.char'Val (0), C.stdio.stderr);
+				fputs (filename, C.stdio.stderr);
+				fputs (C.char'Val (10) & C.char'Val (0), C.stdio.stderr);
 			end if;
 		end streamFile;
 		Dummy_signed_int : C.signed_int;
@@ -240,38 +253,21 @@ procedure test_reader is
 				end loop;
 				-- Once the document has been fully parsed check the validation results
 				if C.libxml.xmlreader.xmlTextReaderIsValid (reader) /= 1 then
-					declare
-						Format : constant C.char_array :=
-							"Document %s does not validate" & C.char'Val (10) & C.char'Val (0);
-					begin
-						C.stdio.fprintf (
-							C.stdio.stderr,
-							Format (Format'First)'Access,
-							filename);
-					end;
+					fputs ("Document " & C.char'Val (0), C.stdio.stderr);
+					fputs (filename, C.stdio.stderr);
+					fputs (" does not validate" & C.char'Val (10) & C.char'Val (0),
+						C.stdio.stderr);
 				end if;
 				C.libxml.xmlreader.xmlFreeTextReader (reader);
 				if ret /= 0 then
-					declare
-						Format : constant C.char_array :=
-							"%s : failed to parse" & C.char'Val (10) & C.char'Val (0);
-					begin
-						C.stdio.fprintf (
-							C.stdio.stderr,
-							Format (Format'First)'Access,
-							filename);
-					end;
+					fputs (filename, C.stdio.stderr);
+					fputs (" : failed to parse" & C.char'Val (10) & C.char'Val (0),
+						C.stdio.stderr);
 				end if;
 			else
-				declare
-					Format : constant C.char_array :=
-						"Unable to open %s" & C.char'Val (10) & C.char'Val (0);
-				begin
-					C.stdio.fprintf (
-						C.stdio.stderr,
-						Format (Format'First)'Access,
-						filename);
-				end;
+				fputs ("Unable to open " & C.char'Val (0), C.stdio.stderr);
+				fputs (filename, C.stdio.stderr);
+				fputs (C.char'Val (10) & C.char'Val (0), C.stdio.stderr);
 			end if;
 		end streamFile;
 		Dummy_signed_int : C.signed_int;
@@ -309,17 +305,11 @@ procedure test_reader is
 					pattern,
 					null) < 0
 				then
-					declare
-						Format : constant C.char_array :=
-							"%s : failed add preserve pattern %s" & C.char'Val (10)
-							& C.char'Val (0);
-					begin
-						C.stdio.fprintf (
-							C.stdio.stderr,
-							Format (Format'First)'Access,
-							filename,
-							To_char_const_ptr (pattern));
-					end;
+					fputs (filename, C.stdio.stderr);
+					fputs (" : failed add preserve pattern " & C.char'Val (0),
+						C.stdio.stderr);
+					fputs (To_char_const_ptr (pattern), C.stdio.stderr);
+					fputs (C.char'Val (10) & C.char'Val (0), C.stdio.stderr);
 				end if;
 				-- Parse and traverse the tree, collecting the nodes in the process
 				ret := C.libxml.xmlreader.xmlTextReaderRead (reader);
@@ -327,15 +317,9 @@ procedure test_reader is
 					ret := C.libxml.xmlreader.xmlTextReaderRead (reader);
 				end loop;
 				if ret /= 0 then
-					declare
-						Format : constant C.char_array :=
-							"%s : failed to parse" & C.char'Val (10) & C.char'Val (0);
-					begin
-						C.stdio.fprintf (
-							C.stdio.stderr,
-							Format (Format'First)'Access,
-							filename);
-					end;
+					fputs (filename, C.stdio.stderr);
+					fputs (" : failed to parse" & C.char'Val (10) & C.char'Val (0),
+						C.stdio.stderr);
 					C.libxml.xmlreader.xmlFreeTextReader (reader);
 					return null;
 				end if;
@@ -344,15 +328,9 @@ procedure test_reader is
 				-- Free up the reader
 				C.libxml.xmlreader.xmlFreeTextReader (reader);
 			else
-				declare
-					Format : constant C.char_array :=
-						"Unable to open %s" & C.char'Val (10) & C.char'Val (0);
-				begin
-					C.stdio.fprintf (
-						C.stdio.stderr,
-						Format (Format'First)'Access,
-						filename);
-				end;
+				fputs ("Unable to open " & C.char'Val (0), C.stdio.stderr);
+				fputs (filename, C.stdio.stderr);
+				fputs (C.char'Val (10) & C.char'Val (0), C.stdio.stderr);
 				return null;
 			end if;
 			return doc;
@@ -393,49 +371,24 @@ procedure test_reader is
 			-- be sure to clean it up at the end (see below).
 			docPtr := C.libxml.xmlreader.xmlTextReaderCurrentDoc (readerPtr);
 			if null = docPtr then
-				declare
-					Format : constant C.char_array :=
-						"failed to obtain document" & C.char'Val (10) & C.char'Val (0);
-				begin
-					C.stdio.fprintf (
-						C.stdio.stderr,
-						Format (Format'First)'Access);
-				end;
+				fputs ("failed to obtain document" & C.char'Val (10) & C.char'Val (0),
+					C.stdio.stderr);
 				return;
 			end if;
 			URL := docPtr.URL;
 			if null = URL then
-				declare
-					Format : constant C.char_array :=
-						"Failed to obtain URL" & C.char'Val (10) & C.char'Val (0);
-				begin
-					C.stdio.fprintf (
-						C.stdio.stderr,
-						Format (Format'First)'Access,
-						To_char_const_ptr (URL));
-				end;
+				fputs (To_char_const_ptr (URL), C.stdio.stderr);
+				fputs (": Failed to obtain URL" & C.char'Val (10) & C.char'Val (0),
+					C.stdio.stderr);
 			end if;
 			if ret /= 0 then
-				declare
-					Format : constant C.char_array :=
-						"%s: Failed to parse" & C.char'Val (10) & C.char'Val (0);
-				begin
-					C.stdio.fprintf (
-						C.stdio.stderr,
-						Format (Format'First)'Access,
-						To_char_const_ptr (URL));
-				end;
+				fputs (To_char_const_ptr (URL), C.stdio.stderr);
+				fputs (" : failed to parse" & C.char'Val (10) & C.char'Val (0),
+					C.stdio.stderr);
 				return;
 			end if;
-			declare
-				Format : constant C.char_array :=
-					"%s: Processed ok" & C.char'Val (10) & C.char'Val (0);
-			begin
-				C.stdio.fprintf (
-					stdout,
-					Format (Format'First)'Access,
-					To_char_const_ptr (URL));
-			end;
+			fputs (To_char_const_ptr (URL), stdout);
+			fputs (": Processed ok" & C.char'Val (10) & C.char'Val (0), stdout);
 		end processDoc;
 		readerPtr : C.libxml.xmlreader.xmlTextReaderPtr;
 		docPtr : C.libxml.tree.xmlDocPtr;
@@ -451,15 +404,9 @@ procedure test_reader is
 			null,
 			0);
 		if null = readerPtr then
-			declare
-				Format : constant C.char_array :=
-					"%s: failed to create reader" & C.char'Val (10) & C.char'Val (0);
-			begin
-				C.stdio.fprintf (
-					C.stdio.stderr,
-					Format (Format'First)'Access,
-					argv1 (argv1'First)'Access);
-			end;
+			fputs (argv1, C.stdio.stderr);
+			fputs (": failed to create reader" & C.char'Val (10) & C.char'Val (0),
+				C.stdio.stderr);
 			raise Program_Error;
 		end if;
 		processDoc (readerPtr);
@@ -477,15 +424,9 @@ procedure test_reader is
 					null,
 					0);
 				if null = readerPtr then
-					declare
-						Format : constant C.char_array :=
-							"%s: failed to create reader" & C.char'Val (10) & C.char'Val (0);
-					begin
-						C.stdio.fprintf (
-							C.stdio.stderr,
-							Format (Format'First)'Access,
-							argv_i);
-					end;
+					fputs (argv_i, C.stdio.stderr);
+					fputs (": failed to create reader" & C.char'Val (10) & C.char'Val (0),
+						C.stdio.stderr);
 					raise Program_Error;
 				end if;
 				processDoc (readerPtr);

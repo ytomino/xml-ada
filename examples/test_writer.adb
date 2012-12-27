@@ -200,12 +200,20 @@ procedure test_writer is
 		tmp := ConvertInput ("<הצü>" & C.char'Val (0), MY_ENCODING);
 		declare
 			Format : constant C.char_array :=
-				"This is another comment with special chars: %s" & C.char'Val (0);
+				"This is another comment with special chars: " & C.char'Val (0);
+			Value : C.char_array (0 .. 255);
+			Dummy_char_ptr : C.char_ptr;
+			pragma Unreferenced (Dummy_char_ptr);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteFormatComment (
+			Dummy_char_ptr := C.string.strcpy (
+				Value (Value'First)'Access,
+				Format (Format'First)'Access);
+			Dummy_char_ptr := C.string.strcat (
+				Value (Value'First)'Access,
+				To_char_const_ptr (tmp));
+			rc := C.libxml.xmlwriter.xmlTextWriterWriteComment (
 				writer,
-				Format (Format'First)'Unchecked_Access,
-				tmp);
+				To_xmlChar_const_ptr (Value (Value'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -229,13 +237,12 @@ procedure test_writer is
 		-- Write an element named "X_ORDER_ID" as child of HEADER.
 		declare
 			Name : constant C.char_array := "X_ORDER_ID" & C.char'Val (0);
-			Format : constant C.char_array := "%010d" & C.char'Val (0);
+			Format : constant C.char_array := "0000053535" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteFormatElement (
+			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
 				writer,
 				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				Format (Format'First)'Access,
-				53535);
+				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -244,13 +251,12 @@ procedure test_writer is
 		-- Write an element named "CUSTOMER_ID" as child of HEADER.
 		declare
 			Name : constant C.char_array := "CUSTOMER_ID" & C.char'Val (0);
-			Format : constant C.char_array := "%d" & C.char'Val (0);
+			Format : constant C.char_array := "1010" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteFormatElement (
+			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
 				writer,
 				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				Format (Format'First)'Access,
-				1010);
+				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -337,13 +343,12 @@ procedure test_writer is
 		-- Write an element named "ENTRY_NO" as child of ENTRY.
 		declare
 			Name : constant C.char_array := "ENTRY_NO" & C.char'Val (0);
-			Format : constant C.char_array := "%d" & C.char'Val (0);
+			Format : constant C.char_array := "10" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteFormatElement (
+			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
 				writer,
 				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				Format (Format'First)'Access,
-				10);
+				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -384,13 +389,12 @@ procedure test_writer is
 		-- Write an element named "ENTRY_NO" as child of ENTRY.
 		declare
 			Name : constant C.char_array := "ENTRY_NO" & C.char'Val (0);
-			Format : constant C.char_array := "%d" & C.char'Val (0);
+			Format : constant C.char_array := "20" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteFormatElement (
+			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
 				writer,
 				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				Format (Format'First)'Access,
-				20);
+				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error

@@ -17,7 +17,7 @@ GCC=$(TARGET)-gcc
 BUILDDIR=build-$(TARGET)
 IMPORTDIR:=import-$(TARGET)
 ifneq ($(findstring freebsd,$(TARGET)),)
-LFLAGS=
+LFLAGS=-lpthread
 HFLAGS=-I/usr/local/i686-pc-freebsd7/include/libxml2
 endif
 ifneq ($(findstring linux,$(TARGET)),)

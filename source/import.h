@@ -2,6 +2,8 @@
 #if defined(__APPLE__)
 #include <sys/resource.h> /* avoiding circular dependency */
 #include <sys/signal.h> /* avoiding circular dependency */
+#elif defined(__FreeBSD__)
+#include <stdint.h> /* before sys/cdefs.h */
 #endif
 #include <libxml/xmlversion.h>
 #undef LIBXML_EXPR_ENABLED

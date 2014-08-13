@@ -6,9 +6,6 @@ package body XML.Streams is
 	use type C.libxml.xmlreader.xmlTextReaderPtr;
 	use type C.libxml.xmlwriter.xmlTextWriterPtr;
 	
-	package Conv is new System.Address_To_Access_Conversions (
-		Ada.Streams.Root_Stream_Type'Class);
-	
 	function Read_Handler (
 		context : C.void_ptr;
 		buffer : access C.char;
@@ -21,6 +18,9 @@ package body XML.Streams is
 		len : C.signed_int)
 		return C.signed_int
 	is
+		package Conv is
+			new System.Address_To_Access_Conversions (
+				Ada.Streams.Root_Stream_Type'Class);
 		Stream : constant Conv.Object_Pointer :=
 			Conv.To_Pointer (System.Address (context));
 		Item : Ada.Streams.Stream_Element_Array (
@@ -45,6 +45,9 @@ package body XML.Streams is
 		len : C.signed_int)
 		return C.signed_int
 	is
+		package Conv is
+			new System.Address_To_Access_Conversions (
+				Ada.Streams.Root_Stream_Type'Class);
 		Stream : constant Conv.Object_Pointer :=
 			Conv.To_Pointer (System.Address (context));
 		Item : Ada.Streams.Stream_Element_Array (
@@ -62,7 +65,11 @@ package body XML.Streams is
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
 		Encoding : Encoding_Type := No_Encoding;
 		URI : String := "")
-		return Reader is
+		return Reader
+	is
+		package Conv is
+			new System.Address_To_Access_Conversions (
+				Ada.Streams.Root_Stream_Type'Class);
 	begin
 		Check_Version;
 		Install_Error_Handlers;
@@ -107,7 +114,11 @@ package body XML.Streams is
 		Encoding : Encoding_Type := No_Encoding;
 		Version : access constant String := null;
 		Standalone : Standalone_Type := No_Specific)
-		return Writer is
+		return Writer
+	is
+		package Conv is
+			new System.Address_To_Access_Conversions (
+				Ada.Streams.Root_Stream_Type'Class);
 	begin
 		Check_Version;
 		Install_Error_Handlers;

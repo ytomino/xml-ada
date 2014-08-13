@@ -101,7 +101,11 @@ procedure test_reader is
 		Dummy_size_t : C.size_t;
 		pragma Unreferenced (Dummy_size_t);
 	begin
-		Dummy_size_t := C.stdio.fwrite (ptr.all'Address, size, nitems, stream);
+		Dummy_size_t := C.stdio.fwrite (
+			C.void_const_ptr (ptr.all'Address),
+			size,
+			nitems,
+			stream);
 	end fwrite;
 	procedure fputs (
 		s : not null access constant C.char;

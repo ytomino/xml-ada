@@ -18,6 +18,7 @@
 -- This file is encoded as Latin-1
 --
 with Ada.Unchecked_Conversion;
+with System;
 with C.stdio;
 with C.string;
 with C.libxml.encoding;
@@ -123,7 +124,7 @@ procedure test_writer is
 					C.size_t (out_size) + 1));
 				declare
 					out_Array : array (C.size_t) of C.libxml.xmlstring.xmlChar;
-					for out_Array'Address use To_void_ptr (L_out);
+					for out_Array'Address use System.Address (To_void_ptr (L_out));
 				begin
 					out_Array (C.size_t (out_size)) := C.libxml.xmlstring.xmlChar'Val (0);
 					-- null terminating out

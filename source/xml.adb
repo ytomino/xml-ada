@@ -1031,7 +1031,8 @@ package body XML is
 		-- one of the design problems of libxml2,
 		-- it uses zero-terminated strings.
 		-- user's data may be lost if the data contains '\0', check it here.
-		if System.Address (C.string.memchr (C.void_ptr (S'Address), 0, S'Length))
+		if System.Address (
+			C.string.memchr (C.void_const_ptr (S'Address), 0, S'Length))
 			/= System.Null_Address
 		then
 			raise Constraint_Error;

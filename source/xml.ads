@@ -150,6 +150,7 @@ package XML is
 	
 	function Value (Parsing_Entry : Parsing_Entry_Type)
 		return Event_Reference_Type;
+	
 	pragma Inline (Value);
 	
 	procedure Read (
@@ -237,10 +238,12 @@ private
 		
 		function State (Object : in out Reader)
 			return not null access Reader_State;
+		
 		pragma Inline (State);
 		
 		function Version (Object : Reader) -- in out
 			return not null access String_Access;
+		
 		pragma Inline (Version);
 		
 	private
@@ -273,10 +276,12 @@ private
 		
 		function Reference (Object : in out Writer)
 			return not null access C.libxml.xmlwriter.xmlTextWriterPtr;
+		
 		pragma Inline (Reference);
 		
 		function Finished (Object : in out Writer)
 			return not null access Boolean;
+		
 		pragma Inline (Finished);
 		
 	private

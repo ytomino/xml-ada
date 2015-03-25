@@ -1009,13 +1009,13 @@ package body XML is
 		end Location;
 	begin
 		if Error = null then
-			raise Status_Error; -- ???
+			raise Use_Error; -- ???
 		else
 			case Error.code is
 				when C.libxml.xmlerror.xmlParserErrors'Enum_Rep (
 					C.libxml.xmlerror.XML_ERR_OK)
 				=>
-					raise Status_Error;
+					raise Use_Error;
 				when C.libxml.xmlerror.xmlParserErrors'Enum_Rep (
 					C.libxml.xmlerror.XML_ERR_NO_MEMORY)
 				=>

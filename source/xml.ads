@@ -227,14 +227,20 @@ private
 		
 		type Reader is limited private;
 		
-		function Raw (X : Reader)
+		function Constant_Reference (Object : Reader)
+			return not null access constant C.libxml.xmlreader.xmlTextReaderPtr;
+		function Reference (Object : in out Reader)
 			return not null access C.libxml.xmlreader.xmlTextReaderPtr;
-		pragma Inline (Raw);
 		
-		function State (X : Reader) return not null access Reader_State;
+		pragma Inline (Constant_Reference);
+		pragma Inline (Reference);
+		
+		function State (Object : in out Reader)
+			return not null access Reader_State;
 		pragma Inline (State);
 		
-		function Version (X : Reader) return not null access String_Access;
+		function Version (Object : Reader) -- in out
+			return not null access String_Access;
 		pragma Inline (Version);
 		
 	private
@@ -265,11 +271,12 @@ private
 		
 		type Writer is limited private;
 		
-		function Raw (X : Writer)
+		function Reference (Object : in out Writer)
 			return not null access C.libxml.xmlwriter.xmlTextWriterPtr;
-		pragma Inline (Raw);
+		pragma Inline (Reference);
 		
-		function Finished (X : Writer) return not null access Boolean;
+		function Finished (Object : in out Writer)
+			return not null access Boolean;
 		pragma Inline (Finished);
 		
 	private

@@ -91,7 +91,7 @@ package body XML.Streams is
 			return Result : Reader do
 				declare
 					Re : C.libxml.xmlreader.xmlTextReaderPtr
-						renames Raw (Result).all;
+						renames Reference (Result).all;
 				begin
 					Re := C.libxml.xmlreader.xmlReaderForIO (
 						Read_Handler'Access,
@@ -136,7 +136,7 @@ package body XML.Streams is
 			return Result : Writer do
 				declare
 					Wr : C.libxml.xmlwriter.xmlTextWriterPtr
-						renames Raw (Result).all;
+						renames Reference (Result).all;
 				begin
 					Wr := C.libxml.xmlwriter.xmlNewTextWriter (Buffer);
 					if Wr = null then

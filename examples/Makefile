@@ -8,16 +8,27 @@ VERSION=$(shell gcc -dumpversion)
 BUILDDIR=$(TARGET).build
 
 ifeq ($(TARGET),$(HOST))
-GNATMAKE=gnatmake
-GCC=$(dir $(shell which $(GNATMAKE)))gcc
+GNATPREFIX=
+GCC=
 BINLN=bin
+else
+GNATPREFIX=$(TARGET)-
+GCC=$(TARGET)-gcc
+BINLN=
+endif
+
+GFLAGS=
+CFLAGS=-ggdb -pipe -gnatef -gnata -gnatwa -gnatyy-3chbs
+MFLAGS=-D $(BUILDDIR)
+BFLAGS=-E
+LFLAGS=-ggdb
+HFLAGS=
+
+ifeq ($(TARGET),$(HOST))
 ifneq ($(findstring darwin,$(TARGET)),)
 HFLAGS=-I/usr/include/libxml2
 endif
 else
-GNATMAKE=$(TARGET)-gnatmake
-GCC=$(TARGET)-gcc
-BINLN=
 ifneq ($(findstring freebsd,$(TARGET)),)
 LFLAGS=-lpthread
 HFLAGS=-I/usr/local/$(TARGET)/include/libxml2
@@ -33,29 +44,35 @@ DRAKE_RTSDIR=$(DRAKE_RTSROOT)/$(TARGET)/$(VERSION)
 endif
 ifneq ($(DRAKE_RTSDIR),)
 IMPORTDIR=
-MFLAGS=--RTS=$(abspath $(DRAKE_RTSDIR))
+GFLAGS+=--RTS=$(abspath $(DRAKE_RTSDIR))
 else
 IMPORTDIR=$(BUILDDIR)/import
-MFLAGS=-I$(abspath $(IMPORTDIR))
+MFLAGS+=-I$(IMPORTDIR)
+endif
+
+ifneq ($(GCC),)
+GFLAGS+=$(filter -m32 -m64,$(GCC))
+MFLAGS+=--GCC="$(GCC)"
+LFLAGS+=--GCC="$(GCC)"
+HFLAGS+=-gcc="$(GCC)"
 endif
 
 EXAMPLES=$(basename $(filter-out b~%,$(wildcard *.adb)))
 
-CFLAGS:=-gnata -gnatwa -gnatyy-3chbs
-
 .PHONY: all clean $(EXAMPLES)
 
-all: $(BUILDDIR)/test_reader $(BUILDDIR)/test_writer $(BUILDDIR)/test_xml $(BUILDDIR)/test_rss $(BUILDDIR)/version $(BINLN)
+all: $(EXAMPLES)
 
 $(BUILDDIR)/%: %.adb $(BUILDDIR) $(IMPORTDIR) $(wildcard $(SOURCEDIR)/*)
-	cd $(BUILDDIR) && $(GNATMAKE) -g $(MFLAGS) -I../$(SOURCEDIR) $(CFLAGS) ../$< -largs $(LFLAGS)
+	$(GNATPREFIX)gnatmake -c -I$(SOURCEDIR) $< $(GFLAGS) $(MFLAGS) -cargs $(CFLAGS)
+	cd $(BUILDDIR) && $(GNATPREFIX)gnatmake -b $(basename $(notdir $<)).ali $(GFLAGS) -bargs $(BFLAGS)
+	cd $(BUILDDIR) && $(GNATPREFIX)gnatlink -o ../$@ $(basename $(notdir $<)).ali $(GFLAGS) $(LFLAGS)
 
 # make build/test_serialize YAMLDIR=yaml-ada/source
 
 YAMLDIR=../../yaml-ada/source
 
-$(BUILDDIR)/test_serialize: test_serialize.adb $(BUILDDIR) $(IMPORTDIR) $(wildcard $(SOURCEDIR)/*)
-	cd $(BUILDDIR) && $(GNATMAKE) -g $(MFLAGS) -I../$(SOURCEDIR) -I../$(YAMLDIR) $(CFLAGS) ../$< -largs $(LFLAGS)
+$(BUILDDIR)/test_serialize: MFLAGS+=-I$(YAMLDIR)
 
 $(BUILDDIR):
 	mkdir $(BUILDDIR)
@@ -63,11 +80,12 @@ $(BUILDDIR):
 $(BINLN): $(BUILDDIR)
 	ln -s $(BUILDDIR) $(BINLN)
 
-$(EXAMPLES): %: $(BUILDDIR)/%
+$(EXAMPLES): %: $(BUILDDIR)/% $(BINLN)
 
 ifneq ($(IMPORTDIR),)
 $(IMPORTDIR): $(SOURCEDIR)/import.h
-	headmaster --to ada -gcc=$(GCC) $(HFLAGS) -p -D $(IMPORTDIR) $+
+	headmaster --to ada $(HFLAGS) -p -D $@ $+
+	touch $@
 endif
 
 clean:

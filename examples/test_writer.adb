@@ -146,7 +146,9 @@ procedure test_writer is
 		-- HAS to be in UTF-8, even if the output XML is encoded
 		-- in iso-8859-1
 		tmp := ConvertInput (
-			"This is a comment with special chars: <äöü>" & C.char'Val (0),
+			"This is a comment with special chars: <"
+				& C.char'Val (16#E4#) & C.char'Val (16#F6#) & C.char'Val (16#FC#)
+				& ">" & C.char'Val (0),
 			MY_ENCODING);
 		rc := C.libxml.xmlwriter.xmlTextWriterWriteComment (writer, tmp);
 		if rc < 0 then
@@ -198,7 +200,10 @@ procedure test_writer is
 		end if;
 
 		-- Write a comment as child of ORDER
-		tmp := ConvertInput ("<äöü>" & C.char'Val (0), MY_ENCODING);
+		tmp := ConvertInput (
+			"<" & C.char'Val (16#E4#) & C.char'Val (16#F6#) & C.char'Val (16#FC#)
+				& ">" & C.char'Val (0),
+			MY_ENCODING);
 		declare
 			Format : constant C.char_array :=
 				"This is another comment with special chars: " & C.char'Val (0);
@@ -264,7 +269,9 @@ procedure test_writer is
 				with "testXmlwriterTree: Error at xmlTextWriterWriteFormatElement";
 		end if;
 		-- Write an element named "NAME_1" as child of HEADER.
-		tmp := ConvertInput ("Müller" & C.char'Val (0), MY_ENCODING);
+		tmp := ConvertInput (
+			"M" & C.char'Val (16#FC#) & "ller" & C.char'Val (0),
+			MY_ENCODING);
 		declare
 			Name : constant C.char_array := "NAME_1" & C.char'Val (0);
 		begin
@@ -281,7 +288,9 @@ procedure test_writer is
 			C.libxml.globals.xmlFree (To_void_ptr (tmp));
 		end if;
 		-- Write an element named "NAME_2" as child of HEADER.
-		tmp := ConvertInput ("Jörg" & C.char'Val (0), MY_ENCODING);
+		tmp := ConvertInput (
+			"J" & C.char'Val (16#F6#) & "rg" & C.char'Val (0),
+			MY_ENCODING);
 		declare
 			Name : constant C.char_array := "NAME_2" & C.char'Val (0);
 		begin

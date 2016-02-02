@@ -224,7 +224,7 @@ private
 		Data : aliased Parsed_Data_Type;
 	end record;
 	
-	package Readers is
+	package Controlled_Readers is
 		
 		type Reader is limited private;
 		
@@ -256,9 +256,9 @@ private
 		
 		overriding procedure Finalize (Object : in out Reader);
 	
-	end Readers;
+	end Controlled_Readers;
 	
-	type Reader is new Readers.Reader;
+	type Reader is new Controlled_Readers.Reader;
 	
 	-- writer
 	
@@ -270,7 +270,7 @@ private
 	procedure Write_Document_End (
 		Object : in out Writer);
 	
-	package Writers is
+	package Controlled_Writers is
 		
 		type Writer is limited private;
 		
@@ -293,9 +293,9 @@ private
 		
 		overriding procedure Finalize (Object : in out Writer);
 		
-	end Writers;
+	end Controlled_Writers;
 	
-	type Writer is new Writers.Writer;
+	type Writer is new Controlled_Writers.Writer;
 	
 	-- exceptions
 	

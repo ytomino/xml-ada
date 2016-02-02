@@ -614,7 +614,7 @@ package body XML is
 		end if;
 	end Next;
 	
-	package body Readers is
+	package body Controlled_Readers is
 		
 		function Constant_Reference (Object : Reader)
 			return not null access constant C.libxml.xmlreader.xmlTextReaderPtr is
@@ -646,7 +646,7 @@ package body XML is
 			Free (Object.Version);
 		end Finalize;
 		
-	end Readers;
+	end Controlled_Readers;
 	
 	-- writer
 	
@@ -968,7 +968,7 @@ package body XML is
 		end if;
 	end Write_Document_End;
 	
-	package body Writers is
+	package body Controlled_Writers is
 		
 		function Reference (Object : in out Writer)
 			return not null access C.libxml.xmlwriter.xmlTextWriterPtr is
@@ -990,7 +990,7 @@ package body XML is
 			C.libxml.xmlwriter.xmlFreeTextWriter (Object.Raw);
 		end Finalize;
 		
-	end Writers;
+	end Controlled_Writers;
 	
 	-- exceptions
 	

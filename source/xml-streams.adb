@@ -142,7 +142,6 @@ package body XML.Streams is
 					if Wr = null then
 						declare
 							Dummy : C.signed_int;
-							pragma Unreferenced (Dummy);
 						begin
 							Dummy := C.libxml.xmlIO.xmlOutputBufferClose (Buffer);
 						end;

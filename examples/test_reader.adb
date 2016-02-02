@@ -99,7 +99,6 @@ procedure test_reader is
 		stream : in C.stdio.FILE_ptr)
 	is
 		Dummy_size_t : C.size_t;
-		pragma Unreferenced (Dummy_size_t);
 	begin
 		Dummy_size_t := C.stdio.fwrite (
 			C.void_const_ptr (ptr.all'Address),
@@ -112,7 +111,6 @@ procedure test_reader is
 		stream : in C.stdio.FILE_ptr)
 	is
 		Dummy_signed_int : C.signed_int;
-		pragma Unreferenced (Dummy_signed_int);
 	begin
 		Dummy_signed_int := C.stdio.fputs (s, stream);
 	end fputs;
@@ -213,7 +211,6 @@ procedure test_reader is
 			end if;
 		end streamFile;
 		Dummy_signed_int : C.signed_int;
-		pragma Unreferenced (Dummy_signed_int);
 	begin
 		stdout := C.stdio.fopen (
 			output (output'First)'Access,
@@ -275,7 +272,6 @@ procedure test_reader is
 			end if;
 		end streamFile;
 		Dummy_signed_int : C.signed_int;
-		pragma Unreferenced (Dummy_signed_int);
 	begin
 		stdout := C.stdio.fopen (
 			output (output'First)'Access,
@@ -343,7 +339,6 @@ procedure test_reader is
 		pattern : constant C.char_array := "preserved" & C.char'Val (0);
 		doc : C.libxml.tree.xmlDocPtr;
 		Dummy_signed_int : C.signed_int;
-		pragma Unreferenced (Dummy_signed_int);
 	begin
 		stdout := C.stdio.fopen (
 			output (output'First)'Access,
@@ -397,7 +392,6 @@ procedure test_reader is
 		readerPtr : C.libxml.xmlreader.xmlTextReaderPtr;
 		docPtr : C.libxml.tree.xmlDocPtr;
 		Dummy_signed_int : C.signed_int;
-		pragma Unreferenced (Dummy_signed_int);
 	begin
 		stdout := C.stdio.fopen (
 			output (output'First)'Access,

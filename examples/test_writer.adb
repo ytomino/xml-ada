@@ -209,7 +209,6 @@ procedure test_writer is
 				"This is another comment with special chars: " & C.char'Val (0);
 			Value : C.char_array (0 .. 255);
 			Dummy_char_ptr : C.char_ptr;
-			pragma Unreferenced (Dummy_char_ptr);
 		begin
 			Dummy_char_ptr := C.string.strcpy (
 				Value (Value'First)'Access,
@@ -463,8 +462,6 @@ procedure test_writer is
 		pragma Assert (uri (uri'Last) = C.char'Val (0));
 		rc : C.signed_int;
 		writer : C.libxml.xmlwriter.xmlTextWriterPtr;
-		Dummy_signed_int : C.signed_int;
-		pragma Unreferenced (Dummy_signed_int);
 	begin
 		-- Create a new XmlWriter for uri, with no compression.
 		writer := C.libxml.xmlwriter.xmlNewTextWriterFilename (
@@ -524,7 +521,6 @@ procedure test_writer is
 		buf : C.libxml.tree.xmlBufferPtr;
 		fp : C.stdio.FILE_ptr;
 		Dummy_signed_int : C.signed_int;
-		pragma Unreferenced (Dummy_signed_int);
 	begin
 		-- Create a new XML buffer, to which the XML document will be written
 		buf := C.libxml.tree.xmlBufferCreate;
@@ -600,7 +596,6 @@ procedure test_writer is
 		writer : C.libxml.xmlwriter.xmlTextWriterPtr;
 		doc : aliased C.libxml.tree.xmlDocPtr;
 		Dummy_signed_int : C.signed_int;
-		pragma Unreferenced (Dummy_signed_int);
 	begin
 		-- Create a new XmlWriter for DOM, with no compression.
 		writer := C.libxml.xmlwriter.xmlNewTextWriterDoc (doc'Access, 0);
@@ -663,9 +658,7 @@ procedure test_writer is
 		doc : C.libxml.tree.xmlDocPtr;
 		node : C.libxml.tree.xmlNodePtr;
 		Dummy_xmlNodePtr : C.libxml.tree.xmlNodePtr;
-		pragma Unreferenced (Dummy_xmlNodePtr);
 		Dummy_signed_int : C.signed_int;
-		pragma Unreferenced (Dummy_signed_int);
 	begin
 		-- Create a new XML DOM tree, to which the XML document will be written
 		doc := C.libxml.tree.xmlNewDoc (

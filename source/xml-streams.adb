@@ -90,17 +90,17 @@ package body XML.Streams is
 			end if;
 			return Result : Reader do
 				declare
-					Re : C.libxml.xmlreader.xmlTextReaderPtr
-						renames Reference (Result).all;
+					NC_Result : Non_Controlled_Reader
+						renames Controlled_Readers.Reference (Result).all;
 				begin
-					Re := C.libxml.xmlreader.xmlReaderForIO (
+					NC_Result.Raw := C.libxml.xmlreader.xmlReaderForIO (
 						Read_Handler'Access,
 						null,
 						C.void_ptr (Conv.To_Address (Conv.Object_Pointer (Stream))),
 						P_URI,
 						P_Encoding,
 						0);
-					if Re = null then
+					if NC_Result.Raw = null then
 						raise Use_Error;
 					end if;
 				end;
@@ -135,11 +135,11 @@ package body XML.Streams is
 			end if;
 			return Result : Writer do
 				declare
-					Wr : C.libxml.xmlwriter.xmlTextWriterPtr
-						renames Reference (Result).all;
+					NC_Result : Non_Controlled_Writer
+						renames Controlled_Writers.Reference (Result).all;
 				begin
-					Wr := C.libxml.xmlwriter.xmlNewTextWriter (Buffer);
-					if Wr = null then
+					NC_Result.Raw := C.libxml.xmlwriter.xmlNewTextWriter (Buffer);
+					if NC_Result.Raw = null then
 						declare
 							Dummy : C.signed_int;
 						begin

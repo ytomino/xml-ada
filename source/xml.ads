@@ -224,34 +224,32 @@ private
 		Data : aliased Parsed_Data_Type;
 	end record;
 	
+	type Non_Controlled_Reader is record
+		Raw : C.libxml.xmlreader.xmlTextReaderPtr;
+		State : Reader_State;
+		Version : String_Access;
+	end record;
+	pragma Suppress_Initialization (Non_Controlled_Reader);
+	
 	package Controlled_Readers is
 		
 		type Reader is limited private;
 		
-		function Constant_Reference (Object : Reader)
-			return not null access constant C.libxml.xmlreader.xmlTextReaderPtr;
-		function Reference (Object : in out Reader)
-			return not null access C.libxml.xmlreader.xmlTextReaderPtr;
+		function Constant_Reference (Object : XML.Reader)
+			return not null access constant Non_Controlled_Reader;
+		function Reference (Object : in out XML.Reader)
+			return not null access Non_Controlled_Reader;
 		
 		pragma Inline (Constant_Reference);
 		pragma Inline (Reference);
 		
-		function State (Object : in out Reader)
-			return not null access Reader_State;
-		
-		pragma Inline (State);
-		
-		function Version (Object : Reader) -- in out
-			return not null access String_Access;
-		
-		pragma Inline (Version);
-		
 	private
 		
 		type Reader is new Ada.Finalization.Limited_Controlled with record
-			Raw : aliased C.libxml.xmlreader.xmlTextReaderPtr := null;
-			State : aliased Reader_State := Next;
-			Version : aliased String_Access := null;
+			Data : aliased Non_Controlled_Reader := (
+				Raw => null,
+				State => Next,
+				Version => null);
 		end record;
 		
 		overriding procedure Finalize (Object : in out Reader);
@@ -270,25 +268,27 @@ private
 	procedure Write_Document_End (
 		Object : in out Writer);
 	
+	type Non_Controlled_Writer is record
+		Raw : C.libxml.xmlwriter.xmlTextWriterPtr := null;
+		Finished : Boolean := False;
+	end record;
+	pragma Suppress_Initialization (Non_Controlled_Writer);
+	
 	package Controlled_Writers is
 		
 		type Writer is limited private;
 		
-		function Reference (Object : in out Writer)
-			return not null access C.libxml.xmlwriter.xmlTextWriterPtr;
+		function Reference (Object : in out XML.Writer)
+			return not null access Non_Controlled_Writer;
 		
 		pragma Inline (Reference);
-		
-		function Finished (Object : in out Writer)
-			return not null access Boolean;
-		
-		pragma Inline (Finished);
 		
 	private
 		
 		type Writer is new Ada.Finalization.Limited_Controlled with record
-			Raw : aliased C.libxml.xmlwriter.xmlTextWriterPtr := null;
-			Finished : aliased Boolean := False;
+			Data : aliased Non_Controlled_Writer := (
+				Raw => null,
+				Finished => False);
 		end record;
 		
 		overriding procedure Finalize (Object : in out Writer);

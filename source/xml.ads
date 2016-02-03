@@ -176,6 +176,9 @@ package XML is
 	procedure Flush (Object : in out Writer);
 	procedure Finish (Object : in out Writer);
 	
+	function Finished (Object : Writer) return Boolean;
+	pragma Inline (Finished);
+	
 	-- exceptions
 	
 	Status_Error : exception
@@ -280,8 +283,11 @@ private
 		
 		function Reference (Object : in out XML.Writer)
 			return not null access Non_Controlled_Writer;
+		function Constant_Reference (Object : XML.Writer)
+			return not null access constant Non_Controlled_Writer;
 		
 		pragma Inline (Reference);
+		pragma Inline (Constant_Reference);
 		
 	private
 		

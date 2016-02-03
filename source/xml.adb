@@ -744,12 +744,11 @@ package body XML is
 	end Set_Indent;
 	
 	procedure Write (Object : in out Writer; Event : in XML.Event) is
+		pragma Check (Pre,
+			Check => not Finished (Object) or else raise Status_Error);
 		NC_Object : Non_Controlled_Writer
 			renames Controlled_Writers.Reference (Object).all;
 	begin
-		if NC_Object.Finished then
-			raise Status_Error;
-		end if;
 		case Event.Event_Type is
 			when No_Event =>
 				raise Data_Error;
@@ -928,7 +927,7 @@ package body XML is
 	
 	procedure Flush (Object : in out Writer) is
 		NC_Object : Non_Controlled_Writer
-			renames Controlled_Writers.Reference (Object).all;
+			renames Controlled_Writers.Constant_Reference (Object).all;
 	begin
 		if C.libxml.xmlwriter.xmlTextWriterFlush (NC_Object.Raw) < 0 then
 			raise Use_Error;
@@ -936,16 +935,21 @@ package body XML is
 	end Flush;
 	
 	procedure Finish (Object : in out Writer) is
+		pragma Check (Pre,
+			Check => not Finished (Object) or else raise Status_Error);
 		NC_Object : Non_Controlled_Writer
 			renames Controlled_Writers.Reference (Object).all;
 	begin
-		if NC_Object.Finished then
-			raise Status_Error;
-		else
-			NC_Object.Finished := True;
-			Write_Document_End (Object);
-		end if;
+		NC_Object.Finished := True;
+		Write_Document_End (Object);
 	end Finish;
+	
+	function Finished (Object : Writer) return Boolean is
+		NC_Object : Non_Controlled_Writer
+			renames Controlled_Writers.Constant_Reference (Object).all;
+	begin
+		return NC_Object.Finished;
+	end Finished;
 	
 	procedure Write_Document_Start (
 		Object : in out Writer;
@@ -1008,6 +1012,12 @@ package body XML is
 		begin
 			return Writer (Object).Data'Unrestricted_Access;
 		end Reference;
+		
+		function Constant_Reference (Object : XML.Writer)
+			return not null access constant Non_Controlled_Writer is
+		begin
+			return Writer (Object).Data'Unchecked_Access;
+		end Constant_Reference;
 		
 		overriding procedure Finalize (Object : in out Writer) is
 		begin

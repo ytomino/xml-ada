@@ -341,7 +341,9 @@ package body XML is
 								begin
 									Parsed_Data.Event := (
 										Event_Type => Document_Type,
-										Name => Name'Unrestricted_Access,
+										Name => Copy_String_Access (
+											Name'Unrestricted_Access,
+											Parsed_Data.Name_Constraint'Access),
 										Public_Id => null,
 										System_Id => null,
 										Subset => null);

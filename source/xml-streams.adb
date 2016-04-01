@@ -1,3 +1,4 @@
+with Ada.IO_Exceptions;
 with System.Address_To_Access_Conversions;
 with C.libxml.tree;
 with C.libxml.xmlIO;
@@ -29,7 +30,11 @@ package body XML.Streams is
 		for Item'Address use buffer.all'Address;
 		Last : Ada.Streams.Stream_Element_Offset;
 	begin
-		Ada.Streams.Read (Stream.all, Item, Last);
+		begin
+			Ada.Streams.Read (Stream.all, Item, Last);
+		exception
+			when Ada.IO_Exceptions.End_Error => Last := 0;
+		end;
 		return C.signed_int (Last);
 	end Read_Handler;
 	

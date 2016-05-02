@@ -635,7 +635,8 @@ package body XML is
 	function Value (Parsing_Entry : Parsing_Entry_Type)
 		return Event_Reference_Type is
 	begin
-		return (Element => Parsing_Entry.Data.Event'Access);
+		return (Element => Parsing_Entry.Data.Event'Unrestricted_Access);
+			-- [gcc-6] wrongly detected as dangling
 	end Value;
 	
 	procedure Next (Object : in out Reader) is

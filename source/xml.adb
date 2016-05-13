@@ -24,8 +24,8 @@ package body XML is
 	procedure Free is new Ada.Unchecked_Deallocation (String, String_Access);
 	
 	type xmlChar_array is array (C.size_t range <>) of
-		aliased C.libxml.xmlstring.xmlChar;
-	pragma Convention (C, xmlChar_array);
+		aliased C.libxml.xmlstring.xmlChar
+		with Convention => C;
 	
 	function To_char_const_ptr is new Ada.Unchecked_Conversion (
 		C.libxml.xmlstring.xmlChar_const_ptr,
@@ -66,8 +66,9 @@ package body XML is
 	
 	procedure Structured_Error_Handler (
 		userData : C.void_ptr;
-		error : access C.libxml.xmlerror.xmlError);
-	pragma Convention (C, Structured_Error_Handler);
+		error : access C.libxml.xmlerror.xmlError)
+		with Convention => C;
+	
 	procedure Structured_Error_Handler (
 		userData : C.void_ptr;
 		error : access C.libxml.xmlerror.xmlError) is
@@ -79,16 +80,17 @@ package body XML is
 		context : C.void_ptr;
 		buffer : access C.char;
 		len : C.signed_int)
-		return C.signed_int;
-	pragma Convention (C, Read_Handler);
+		return C.signed_int
+		with Convention => C;
+	
 	function Read_Handler (
 		context : C.void_ptr;
 		buffer : access C.char;
 		len : C.signed_int)
 		return C.signed_int
 	is
-		procedure Input (Item : out String; Last : out Natural);
-		pragma Import (Ada, Input);
+		procedure Input (Item : out String; Last : out Natural)
+			with Import;
 		for Input'Address use System.Address (context);
 		Item : String (1 .. Natural (len));
 		for Item'Address use buffer.all'Address;
@@ -102,16 +104,17 @@ package body XML is
 		context : C.void_ptr;
 		buffer : access constant C.char;
 		len : C.signed_int)
-		return C.signed_int;
-	pragma Convention (C, Write_Handler);
+		return C.signed_int
+		with Convention => C;
+	
 	function Write_Handler (
 		context : C.void_ptr;
 		buffer : access constant C.char;
 		len : C.signed_int)
 		return C.signed_int
 	is
-		procedure Output (Item : in String);
-		pragma Import (Ada, Output);
+		procedure Output (Item : in String)
+			with Import;
 		for Output'Address use System.Address (context);
 		Item : String (1 .. Natural (len));
 		for Item'Address use buffer.all'Address;

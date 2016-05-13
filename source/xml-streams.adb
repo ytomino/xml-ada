@@ -11,8 +11,9 @@ package body XML.Streams is
 		context : C.void_ptr;
 		buffer : access C.char;
 		len : C.signed_int)
-		return C.signed_int;
-	pragma Convention (C, Read_Handler);
+		return C.signed_int
+		with Convention => C;
+	
 	function Read_Handler (
 		context : C.void_ptr;
 		buffer : access C.char;
@@ -42,8 +43,9 @@ package body XML.Streams is
 		context : C.void_ptr;
 		buffer : access constant C.char;
 		len : C.signed_int)
-		return C.signed_int;
-	pragma Convention (C, Write_Handler);
+		return C.signed_int
+		with Convention => C;
+	
 	function Write_Handler (
 		context : C.void_ptr;
 		buffer : access constant C.char;

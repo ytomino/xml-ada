@@ -63,7 +63,7 @@ EXAMPLES=$(basename $(filter-out b~%,$(wildcard *.adb)))
 
 all: $(EXAMPLES)
 
-$(BUILDDIR)/%: %.adb $(BUILDDIR) $(IMPORTDIR) $(wildcard $(SOURCEDIR)/*)
+$(BUILDDIR)/%: %.adb $(wildcard $(SOURCEDIR)/*) | $(BUILDDIR) $(IMPORTDIR)
 	$(GNATPREFIX)gnatmake -c -I$(SOURCEDIR) $< $(GFLAGS) $(MFLAGS) -cargs $(CFLAGS)
 	cd $(BUILDDIR) && $(GNATPREFIX)gnatmake -b $(basename $(notdir $<)).ali $(GFLAGS) -bargs $(BFLAGS)
 	cd $(BUILDDIR) && $(GNATPREFIX)gnatlink -o ../$@ $(basename $(notdir $<)).ali $(GFLAGS) $(LFLAGS)
@@ -77,7 +77,7 @@ $(BUILDDIR)/test_serialize: MFLAGS+=-I$(YAMLDIR)
 $(BUILDDIR):
 	mkdir $(BUILDDIR)
 
-$(BINLN): $(BUILDDIR)
+$(BINLN): | $(BUILDDIR)
 	ln -s $(BUILDDIR) $(BINLN)
 
 $(EXAMPLES): %: $(BUILDDIR)/% $(BINLN)

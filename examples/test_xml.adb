@@ -1,3 +1,4 @@
+with Ada.Characters.Latin_1;
 with Ada.Streams.Stream_IO;
 with Ada.Text_IO;
 with XML.Streams;
@@ -5,6 +6,7 @@ procedure test_xml is
 	use type XML.Encoding_Type;
 	use type XML.Event_Type;
 	use type XML.Standalone_Type;
+	package Latin_1 renames Ada.Characters.Latin_1;
 	function "=" (Left, Right : XML.Event) return Boolean is
 	begin
 		if Left.Event_Type /= Right.Event_Type then
@@ -77,7 +79,7 @@ procedure test_xml is
 		new XML.Event'(
 			Event_Type => XML.Attribute,
 			Name => new String'("attr"),
-			Value => new String'("<>&" & ASCII.HT & ASCII.LF)),
+			Value => new String'("<>&" & Latin_1.HT & Latin_1.LF)),
 		new XML.Event'(
 			Event_Type => XML.Element_End),
 		new XML.Event'(
@@ -98,7 +100,7 @@ begin
 			Version_1_0'Access,
 			XML.Yes);
 	begin
-		XML.Set_Indent (W, (1 => ASCII.HT));
+		XML.Set_Indent (W, (1 => Latin_1.HT));
 		for I in Data'Range loop
 			XML.Write (W, Data (I).all);
 		end loop;

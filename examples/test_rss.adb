@@ -1,8 +1,10 @@
+with Ada.Characters.Latin_1;
 with Ada.Command_Line;
 with Ada.Streams.Stream_IO;
 with Ada.Text_IO;
 with XML.Streams;
 procedure test_rss is
+	package Latin_1 renames Ada.Characters.Latin_1;
 	procedure Read_RSS (Reader : in out XML.Reader) is
 		type RSS_Version_Type is (RSS_1, RSS_2);
 		RSS_Version : RSS_Version_Type;
@@ -82,7 +84,8 @@ procedure test_rss is
 								case Event.Event_Type is
 									when XML.Attribute =>
 										if Event.Name.all = "rdf:about" then
-											Ada.Text_IO.Put_Line (ASCII.HT & "about: " & Event.Value.all);
+											Ada.Text_IO.Put_Line (
+												Latin_1.HT & "about: " & Event.Value.all);
 										end if;
 									when XML.Element_Start =>
 										if Event.Name.all = "title" then
@@ -104,7 +107,8 @@ procedure test_rss is
 							when Title =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "title: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT & "title: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -113,7 +117,8 @@ procedure test_rss is
 							when Link =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "link: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT & "link: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -122,7 +127,8 @@ procedure test_rss is
 							when Creator =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "creator: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT & "creator: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -132,7 +138,9 @@ procedure test_rss is
 								case Event.Event_Type is
 									when XML.Attribute =>
 										if Event.Name.all = "rdf:about" then
-											Ada.Text_IO.Put_Line (ASCII.HT & "item about: " & Event.Value.all);
+											Ada.Text_IO.Put_Line (
+												Latin_1.HT
+												& "item about: " & Event.Value.all);
 										end if;
 									when XML.Element_Start =>
 										if Event.Name.all = "title" then
@@ -152,7 +160,9 @@ procedure test_rss is
 							when Item_Title =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "item title: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT
+											& "item title: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -161,7 +171,9 @@ procedure test_rss is
 							when Item_Link =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "item link: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT
+											& "item link: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -237,7 +249,8 @@ procedure test_rss is
 							when Title =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "title: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT & "title: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -246,7 +259,8 @@ procedure test_rss is
 							when Link =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "link: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT & "link: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -255,7 +269,8 @@ procedure test_rss is
 							when Creator =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "creator: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT & "creator: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -281,7 +296,9 @@ procedure test_rss is
 							when Item_Title =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "item title: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT
+											& "item title: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -290,7 +307,9 @@ procedure test_rss is
 							when Item_Link =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (ASCII.HT & "item link: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (
+											Latin_1.HT
+											& "item link: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>

@@ -50,7 +50,7 @@ package body XML is
 			Constraints : System.Address;
 		end record;
 		Fat : Fat_Type;
-		Result : String_Access;
+		Result : aliased String_Access;
 		for Fat'Address use Result'Address;
 	begin
 		Fat.Data := S.all'Address;
@@ -167,14 +167,14 @@ package body XML is
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstName (
 											NC_Object.Raw);
-									Name : aliased String (
+									Name : String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
 									for Name'Address use C_Name.all'Address;
 									C_Value : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstValue (
 											NC_Object.Raw);
-									Value : aliased String (
+									Value : String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Value))));
 									for Value'Address use C_Value.all'Address;
@@ -220,7 +220,7 @@ package body XML is
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstName (
 											NC_Object.Raw);
-									Name : aliased String (
+									Name : String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
 									for Name'Address use C_Name.all'Address;
@@ -262,7 +262,7 @@ package body XML is
 									C_Content : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstValue (
 											NC_Object.Raw);
-									Content : aliased String (
+									Content : String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Content))));
 									for Content'Address use C_Content.all'Address;
@@ -314,7 +314,7 @@ package body XML is
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstName (
 											NC_Object.Raw);
-									Name : aliased String (
+									Name : String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
 									for Name'Address use C_Name.all'Address;
@@ -337,7 +337,7 @@ package body XML is
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstName (
 											NC_Object.Raw);
-									Name : aliased String (
+									Name : String (
 										1 ..
 										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
 									for Name'Address use C_Name.all'Address;
@@ -401,7 +401,7 @@ package body XML is
 	end No_Encoding;
 	
 	function Find (Name : String) return Encoding_Type is
-		Z_Name : String := Name & Character'Val (0);
+		Z_Name : aliased String := Name & Character'Val (0);
 		C_Name : C.char_array (0 .. Name'Length);
 		for C_Name'Address use Z_Name'Address;
 		Result : constant C.libxml.encoding.xmlCharEncodingHandlerPtr :=
@@ -436,7 +436,7 @@ package body XML is
 		declare
 			P_Encoding : C.char_const_ptr := null;
 			P_URI : access constant C.char := null;
-			Z_URI : String (1 .. URI'Length + 1);
+			Z_URI : aliased String (1 .. URI'Length + 1);
 			C_URI : C.char_array (C.size_t);
 			for C_URI'Address use Z_URI'Address;
 		begin
@@ -735,7 +735,7 @@ package body XML is
 	procedure Set_Indent (Object : in out Writer; Indent : in String) is
 		NC_Object : Non_Controlled_Writer
 			renames Controlled_Writers.Reference (Object).all;
-		Z_Indent : String := Indent & Character'Val (0);
+		Z_Indent : aliased String := Indent & Character'Val (0);
 		C_Indent : xmlChar_array (0 .. Indent'Length);
 		for C_Indent'Address use Z_Indent'Address;
 	begin
@@ -759,8 +759,8 @@ package body XML is
 			when Element_Start =>
 				Check_No_Zero (Event.Name.all);
 				declare
-					Z_Name : String := Event.Name.all & Character'Val (0);
-					C_Name : aliased xmlChar_array (C.size_t);
+					Z_Name : aliased String := Event.Name.all & Character'Val (0);
+					C_Name : xmlChar_array (C.size_t);
 					for C_Name'Address use Z_Name'Address;
 				begin
 					Clear_Last_Error;
@@ -775,11 +775,11 @@ package body XML is
 				Check_No_Zero (Event.Name.all);
 				Check_No_Zero (Event.Value.all);
 				declare
-					Z_Name : String := Event.Name.all & Character'Val (0);
-					C_Name : aliased xmlChar_array (C.size_t);
+					Z_Name : aliased String := Event.Name.all & Character'Val (0);
+					C_Name : xmlChar_array (C.size_t);
 					for C_Name'Address use Z_Name'Address;
-					Z_Value : String := Event.Value.all & Character'Val (0);
-					C_Value : aliased xmlChar_array (C.size_t);
+					Z_Value : aliased String := Event.Value.all & Character'Val (0);
+					C_Value : xmlChar_array (C.size_t);
 					for C_Value'Address use Z_Value'Address;
 				begin
 					Clear_Last_Error;
@@ -794,8 +794,9 @@ package body XML is
 			when Text =>
 				Check_No_Zero (Event.Content.all);
 				declare
-					Z_Content : String := Event.Content.all & Character'Val (0);
-					C_Content : aliased xmlChar_array (C.size_t);
+					Z_Content : aliased String :=
+						Event.Content.all & Character'Val (0);
+					C_Content : xmlChar_array (C.size_t);
 					for C_Content'Address use Z_Content'Address;
 				begin
 					Clear_Last_Error;
@@ -809,8 +810,9 @@ package body XML is
 			when CDATA =>
 				Check_No_Zero (Event.Content.all);
 				declare
-					Z_Content : String := Event.Content.all & Character'Val (0);
-					C_Content : aliased xmlChar_array (C.size_t);
+					Z_Content : aliased String :=
+						Event.Content.all & Character'Val (0);
+					C_Content : xmlChar_array (C.size_t);
 					for C_Content'Address use Z_Content'Address;
 				begin
 					Clear_Last_Error;
@@ -830,8 +832,9 @@ package body XML is
 			when Comment =>
 				Check_No_Zero (Event.Content.all);
 				declare
-					Z_Content : String := Event.Content.all & Character'Val (0);
-					C_Content : aliased xmlChar_array (C.size_t);
+					Z_Content : aliased String :=
+						Event.Content.all & Character'Val (0);
+					C_Content : xmlChar_array (C.size_t);
 					for C_Content'Address use Z_Content'Address;
 				begin
 					Clear_Last_Error;
@@ -864,19 +867,20 @@ package body XML is
 						Subset_Length := Event.Subset'Length + 1;
 					end if;
 					declare
-						Z_Name : String := Event.Name.all & Character'Val (0);
-						C_Name : aliased xmlChar_array (C.size_t);
+						Z_Name : aliased String :=
+							Event.Name.all & Character'Val (0);
+						C_Name : xmlChar_array (C.size_t);
 						for C_Name'Address use Z_Name'Address;
-						Z_Public_Id : String (1 .. Public_Id_Length);
-						C_Public_Id : aliased xmlChar_array (C.size_t);
+						Z_Public_Id : aliased String (1 .. Public_Id_Length);
+						C_Public_Id : xmlChar_array (C.size_t);
 						for C_Public_Id'Address use Z_Public_Id'Address;
 						P_Public_Id : access constant C.libxml.xmlstring.xmlChar;
-						Z_System_Id : String (1 .. System_Id_Length);
-						C_System_Id : aliased xmlChar_array (C.size_t);
+						Z_System_Id : aliased String (1 .. System_Id_Length);
+						C_System_Id : xmlChar_array (C.size_t);
 						for C_System_Id'Address use Z_System_Id'Address;
 						P_System_Id : access constant C.libxml.xmlstring.xmlChar;
-						Z_Subset : String (1 .. Subset_Length);
-						C_Subset : aliased xmlChar_array (C.size_t);
+						Z_Subset : aliased String (1 .. Subset_Length);
+						C_Subset : xmlChar_array (C.size_t);
 						for C_Subset'Address use Z_Subset'Address;
 						P_Subset : access constant C.libxml.xmlstring.xmlChar;
 					begin
@@ -970,8 +974,8 @@ package body XML is
 			Version_Length := Version'Length + 1;
 		end if;
 		declare
-			Z_Version : String (1 .. Version_Length);
-			C_Version : aliased C.char_array (C.size_t);
+			Z_Version : aliased String (1 .. Version_Length);
+			C_Version : C.char_array (C.size_t);
 			for C_Version'Address use Z_Version'Address;
 			P_Version : access constant C.char := null;
 			P_Encoding : access constant C.char := null;

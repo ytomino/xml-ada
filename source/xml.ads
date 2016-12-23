@@ -138,8 +138,7 @@ package XML is
 		Object : in out Reader;
 		Process : not null access procedure (Event : in XML.Event));
 	
-	procedure Read_Until_Element_End (
-		Object : in out Reader);
+	procedure Read_Until_Element_End (Object : in out Reader);
 	
 	type Parsing_Entry_Type is limited private;
 	pragma Preelaborable_Initialization (Parsing_Entry_Type);
@@ -249,10 +248,8 @@ private
 	private
 		
 		type Reader is new Ada.Finalization.Limited_Controlled with record
-			Data : aliased Non_Controlled_Reader := (
-				Raw => null,
-				State => Next,
-				Version => null);
+			Data : aliased Non_Controlled_Reader :=
+				(Raw => null, State => Next, Version => null);
 		end record;
 		
 		overriding procedure Finalize (Object : in out Reader);
@@ -292,9 +289,8 @@ private
 	private
 		
 		type Writer is new Ada.Finalization.Limited_Controlled with record
-			Data : aliased Non_Controlled_Writer := (
-				Raw => null,
-				Finished => False);
+			Data : aliased Non_Controlled_Writer :=
+				(Raw => null, Finished => False);
 		end record;
 		
 		overriding procedure Finalize (Object : in out Writer);

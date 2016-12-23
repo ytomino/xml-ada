@@ -94,9 +94,9 @@ package body Serialization.XML is
 			case Event.Event_Type is
 				when Standard.XML.Document_Type =>
 					if Event.Name.all /= Tag then
-						raise Standard.XML.Data_Error
-							with """" & Event.Name.all
-								& """ is not expected tag (""" & Tag & """) .";
+						raise Standard.XML.Data_Error with
+							"""" & Event.Name.all & """ is not expected tag ("""
+							& Tag & """) .";
 					end if;
 				when others =>
 					Handle_Name (Object, In_Mapping, Event, Tag);
@@ -110,8 +110,8 @@ package body Serialization.XML is
 			Standard.XML.Read (Object.Reader.all, Parsing_Entry);
 			Process (Standard.XML.Value (Parsing_Entry).Element.all);
 			if Object.Level = 0 then
-				raise Standard.XML.Data_Error
-					with "expected tag (""" & Tag & """) was not found.";
+				raise Standard.XML.Data_Error with
+					"expected tag (""" & Tag & """) was not found.";
 			end if;
 		end if;
 	end Read_Name_On_Start;
@@ -127,8 +127,8 @@ package body Serialization.XML is
 				Object.Next_Value := new String'(
 					Standard.XML.Value (Parsing_Entry).Element.Content.all);
 			when Standard.XML.Element_Start =>
-				if Standard.XML.Value (Parsing_Entry).Element.Name.all
-					= Sequence_Item_Name
+				if Standard.XML.Value (Parsing_Entry).Element.Name.all =
+					Sequence_Item_Name
 				then
 					Object.Next_Kind := Enter_Sequence;
 					Object.Next_Next_Name := Sequence_Item_Name'Access;
@@ -142,8 +142,8 @@ package body Serialization.XML is
 		end case;
 		if Object.Next_Kind = Value then
 			Standard.XML.Read (Object.Reader.all, Parsing_Entry);
-			if Standard.XML.Value (Parsing_Entry).Element.Event_Type
-				/= Standard.XML.Element_End
+			if Standard.XML.Value (Parsing_Entry).Element.Event_Type /=
+				Standard.XML.Element_End
 			then
 				raise Standard.XML.Data_Error;
 			end if;
@@ -188,12 +188,13 @@ package body Serialization.XML is
 		S := new Serializer'(
 			Direction => Reading,
 			Reader => R);
-		return Result : constant Reference_Type := (
-			Ada.Finalization.Limited_Controlled with
-			Serializer => S,
-			Serializer_Body => S,
-			Reader_Body => R,
-			Writer_Body => null)
+		return Result : constant Reference_Type :=
+			(Ada.Finalization.Limited_Controlled
+				with
+					Serializer => S,
+					Serializer_Body => S,
+					Reader_Body => R,
+					Writer_Body => null)
 		do
 			pragma Unreferenced (Result);
 			In_Controlled := True;
@@ -268,12 +269,13 @@ package body Serialization.XML is
 		S := new Serializer'(
 			Direction => Writing,
 			Writer => W);
-		return Result : constant Reference_Type := (
-			Ada.Finalization.Limited_Controlled with
-			Serializer => S,
-			Serializer_Body => S,
-			Reader_Body => null,
-			Writer_Body => W)
+		return Result : constant Reference_Type :=
+			(Ada.Finalization.Limited_Controlled
+				with
+					Serializer => S,
+					Serializer_Body => S,
+					Reader_Body => null,
+					Writer_Body => W)
 		do
 			pragma Unreferenced (Result);
 			In_Controlled := True;

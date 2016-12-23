@@ -127,10 +127,10 @@ package body XML is
 	No_Image : constant C.char_array := "no" & C.char'Val (0);
 	Yes_Image : constant C.char_array := "yes" & C.char'Val (0);
 	Standalone_Image : constant
-		array (C.signed_int range -1 .. 1) of C.char_const_ptr := (
-			Standalone_Type'Enum_Rep (No_Specific) => null,
-			Standalone_Type'Enum_Rep (No) => No_Image (No_Image'First)'Access,
-			Standalone_Type'Enum_Rep (Yes) => Yes_Image (Yes_Image'First)'Access);
+			array (C.signed_int range -1 .. 1) of C.char_const_ptr := (
+		Standalone_Type'Enum_Rep (No_Specific) => null,
+		Standalone_Type'Enum_Rep (No) => No_Image (No_Image'First)'Access,
+		Standalone_Type'Enum_Rep (Yes) => Yes_Image (Yes_Image'First)'Access);
 	
 	-- reading one event
 	
@@ -156,13 +156,11 @@ package body XML is
 					else
 						case Node_Type is
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_NONE)
-							=>
+									C.libxml.xmlreader.XML_READER_TYPE_NONE) =>
 								Parsed_Data.Event := (Event_Type => No_Event);
 								NC_Object.State := Remaining;
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_ATTRIBUTE)
-							=>
+									C.libxml.xmlreader.XML_READER_TYPE_ATTRIBUTE) =>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstName (
@@ -214,8 +212,7 @@ package body XML is
 									end if;
 								end;
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_ELEMENT)
-							=>
+									C.libxml.xmlreader.XML_READER_TYPE_ELEMENT) =>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstName (
@@ -248,16 +245,15 @@ package body XML is
 									NC_Object.State := Remaining;
 								end if;
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_TEXT)
-							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_CDATA)
-							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_COMMENT)
-							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_WHITESPACE)
-							| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE)
-							=>
+									C.libxml.xmlreader.XML_READER_TYPE_TEXT)
+								| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+									C.libxml.xmlreader.XML_READER_TYPE_CDATA)
+								| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+									C.libxml.xmlreader.XML_READER_TYPE_COMMENT)
+								| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+									C.libxml.xmlreader.XML_READER_TYPE_WHITESPACE)
+								| C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+									C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE) =>
 								declare
 									C_Content : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstValue (
@@ -272,32 +268,27 @@ package body XML is
 								begin
 									case Node_Type is
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_TEXT)
-										=>
+												C.libxml.xmlreader.XML_READER_TYPE_TEXT) =>
 											Parsed_Data.Event := (
 												Event_Type => Text,
 												Content => Content_Access);
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_CDATA)
-										=>
+												C.libxml.xmlreader.XML_READER_TYPE_CDATA) =>
 											Parsed_Data.Event := (
 												Event_Type => CDATA,
 												Content => Content_Access);
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_COMMENT)
-										=>
+												C.libxml.xmlreader.XML_READER_TYPE_COMMENT) =>
 											Parsed_Data.Event := (
 												Event_Type => Comment,
 												Content => Content_Access);
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_WHITESPACE)
-										=>
+												C.libxml.xmlreader.XML_READER_TYPE_WHITESPACE) =>
 											Parsed_Data.Event := (
 												Event_Type => Whitespace,
 												Content => Content_Access);
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-											C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE)
-										=>
+												C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE) =>
 											Parsed_Data.Event := (
 												Event_Type => Significant_Whitespace,
 												Content => Content_Access);
@@ -308,8 +299,7 @@ package body XML is
 								end;
 								NC_Object.State := Remaining;
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_PROCESSING_INSTRUCTION)
-							=>
+									C.libxml.xmlreader.XML_READER_TYPE_PROCESSING_INSTRUCTION) =>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstName (
@@ -331,8 +321,7 @@ package body XML is
 								end;
 								NC_Object.State := Remaining;
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_DOCUMENT_TYPE)
-							=>
+									C.libxml.xmlreader.XML_READER_TYPE_DOCUMENT_TYPE) =>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 										C.libxml.xmlreader.xmlTextReaderConstName (
@@ -357,13 +346,12 @@ package body XML is
 								end;
 								NC_Object.State := Remaining;
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
-								C.libxml.xmlreader.XML_READER_TYPE_END_ELEMENT)
-							=>
+									C.libxml.xmlreader.XML_READER_TYPE_END_ELEMENT) =>
 								Parsed_Data.Event := (Event_Type => Element_End);
 								NC_Object.State := Remaining;
 							when others =>
-								raise Program_Error
-									with "in XML.Read, unimplemented" & Node_Type'Img;
+								raise Program_Error with
+									"in XML.Read, unimplemented" & Node_Type'Img;
 						end case;
 					end if;
 				end;
@@ -610,8 +598,7 @@ package body XML is
 		Read (Object, Parsing_Entry.Data);
 	end Read;
 	
-	procedure Read_Until_Element_End (
-		Object : in out Reader) is
+	procedure Read_Until_Element_End (Object : in out Reader) is
 	begin
 		loop
 			declare
@@ -1071,12 +1058,10 @@ package body XML is
 		else
 			case Error.code is
 				when C.libxml.xmlerror.xmlParserErrors'Enum_Rep (
-					C.libxml.xmlerror.XML_ERR_OK)
-				=>
+						C.libxml.xmlerror.XML_ERR_OK) =>
 					raise Use_Error;
 				when C.libxml.xmlerror.xmlParserErrors'Enum_Rep (
-					C.libxml.xmlerror.XML_ERR_NO_MEMORY)
-				=>
+						C.libxml.xmlerror.XML_ERR_NO_MEMORY) =>
 					raise Storage_Error;
 				when others =>
 					raise Data_Error with Location & To_String (Error.message);
@@ -1090,8 +1075,8 @@ package body XML is
 		-- it uses zero-terminated strings.
 		-- user's data may be lost if the data contains '\0', check it here.
 		if System.Address (
-			C.string.memchr (C.void_const_ptr (S'Address), 0, S'Length))
-			/= System.Null_Address
+				C.string.memchr (C.void_const_ptr (S'Address), 0, S'Length)) /=
+			System.Null_Address
 		then
 			raise Constraint_Error;
 		end if;

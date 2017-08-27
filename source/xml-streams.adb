@@ -7,6 +7,10 @@ package body XML.Streams is
 	use type C.libxml.xmlreader.xmlTextReaderPtr;
 	use type C.libxml.xmlwriter.xmlTextWriterPtr;
 	
+	procedure memcpy (dst, src : System.Address; n : C.size_t)
+		with Import,
+			Convention => Intrinsic, External_Name => "__builtin_memcpy";
+	
 	function Read_Handler (
 		context : C.void_ptr;
 		buffer : access C.char;
@@ -83,16 +87,15 @@ package body XML.Streams is
 		declare
 			P_Encoding : C.char_const_ptr := null;
 			P_URI : access constant C.char := null;
-			Z_URI : String (1 .. URI'Length + 1);
-			C_URI : C.char_array (C.size_t);
-			for C_URI'Address use Z_URI'Address;
+			URI_Length : constant C.size_t := URI'Length;
+			C_URI : aliased C.char_array (0 .. URI_Length); -- NUL
 		begin
 			if Encoding /= null then
 				P_Encoding := C.char_const_ptr (Encoding.name);
 			end if;
 			if URI'Length > 0 then
-				Z_URI (1 .. URI'Length) := URI;
-				Z_URI (Z_URI'Last) := Character'Val (0);
+				memcpy (C_URI'Address, URI'Address, URI_Length);
+				C_URI (URI_Length) := C.char'Val (0);
 				P_URI := C_URI (C_URI'First)'Access;
 			end if;
 			return Result : Reader do

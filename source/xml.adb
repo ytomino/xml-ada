@@ -14,6 +14,7 @@ package body XML is
 	use type System.Address;
 	use type C.char_array;
 	use type C.signed_int;
+	use type C.size_t;
 	use type C.libxml.encoding.xmlCharEncodingHandlerPtr;
 	use type C.libxml.xmlstring.xmlChar_const_ptr;
 	use type C.libxml.tree.xmlOutputBufferPtr;
@@ -22,6 +23,10 @@ package body XML is
 	use type C.libxml.xmlwriter.xmlTextWriterPtr;
 	
 	procedure Free is new Ada.Unchecked_Deallocation (String, String_Access);
+	
+	procedure memcpy (dst, src : System.Address; n : C.size_t)
+		with Import,
+			Convention => Intrinsic, External_Name => "__builtin_memcpy";
 	
 	type xmlChar_array is array (C.size_t range <>) of
 		aliased C.libxml.xmlstring.xmlChar
@@ -389,13 +394,14 @@ package body XML is
 	end No_Encoding;
 	
 	function Find (Name : String) return Encoding_Type is
-		Z_Name : aliased String := Name & Character'Val (0);
-		C_Name : C.char_array (0 .. Name'Length);
-		for C_Name'Address use Z_Name'Address;
-		Result : constant C.libxml.encoding.xmlCharEncodingHandlerPtr :=
-			C.libxml.encoding.xmlFindCharEncodingHandler (
-				C_Name (C_Name'First)'Access);
+		Name_Length : constant C.size_t := Name'Length;
+		C_Name : C.char_array (0 .. Name_Length); -- NUL
+		Result : C.libxml.encoding.xmlCharEncodingHandlerPtr;
 	begin
+		memcpy (C_Name'Address, Name'Address, Name_Length);
+		C_Name (Name_Length) := C.char'Val (0);
+		Result := C.libxml.encoding.xmlFindCharEncodingHandler (
+			C_Name (C_Name'First)'Access);
 		if Result = null then
 			raise Name_Error;
 		end if;
@@ -424,16 +430,15 @@ package body XML is
 		declare
 			P_Encoding : C.char_const_ptr := null;
 			P_URI : access constant C.char := null;
-			Z_URI : aliased String (1 .. URI'Length + 1);
-			C_URI : C.char_array (C.size_t);
-			for C_URI'Address use Z_URI'Address;
+			URI_Length : constant C.size_t := URI'Length;
+			C_URI : aliased C.char_array (0 .. URI_Length); -- NUL
 		begin
 			if Encoding /= null then
 				P_Encoding := C.char_const_ptr (Encoding.name);
 			end if;
 			if URI'Length > 0 then
-				Z_URI (1 .. URI'Length) := URI;
-				Z_URI (Z_URI'Last) := Character'Val (0);
+				memcpy (C_URI'Address, URI'Address, URI_Length);
+				C_URI (URI_Length) := C.char'Val (0);
 				P_URI := C_URI (C_URI'First)'Access;
 			end if;
 			return Result : Reader do
@@ -722,10 +727,11 @@ package body XML is
 	procedure Set_Indent (Object : in out Writer; Indent : in String) is
 		NC_Object : Non_Controlled_Writer
 			renames Controlled_Writers.Reference (Object).all;
-		Z_Indent : aliased String := Indent & Character'Val (0);
-		C_Indent : xmlChar_array (0 .. Indent'Length);
-		for C_Indent'Address use Z_Indent'Address;
+		Indent_Length : constant C.size_t := Indent'Length;
+		C_Indent : xmlChar_array (0 .. Indent_Length); -- NUL
 	begin
+		memcpy (C_Indent'Address, Indent'Address, Indent_Length);
+		C_Indent (Indent_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 		if C.libxml.xmlwriter.xmlTextWriterSetIndentString (
 			NC_Object.Raw,
 			C_Indent (C_Indent'First)'Access) < 0
@@ -746,10 +752,12 @@ package body XML is
 			when Element_Start =>
 				Check_No_Zero (Event.Name.all);
 				declare
-					Z_Name : aliased String := Event.Name.all & Character'Val (0);
-					C_Name : xmlChar_array (C.size_t);
-					for C_Name'Address use Z_Name'Address;
+					Name : String renames Event.Name.all;
+					Name_Length : constant C.size_t := Name'Length;
+					C_Name : xmlChar_array (0 .. Name_Length); -- NUL
 				begin
+					memcpy (C_Name'Address, Name'Address, Name_Length);
+					C_Name (Name_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterStartElement (
 						NC_Object.Raw,
@@ -762,13 +770,17 @@ package body XML is
 				Check_No_Zero (Event.Name.all);
 				Check_No_Zero (Event.Value.all);
 				declare
-					Z_Name : aliased String := Event.Name.all & Character'Val (0);
-					C_Name : xmlChar_array (C.size_t);
-					for C_Name'Address use Z_Name'Address;
-					Z_Value : aliased String := Event.Value.all & Character'Val (0);
-					C_Value : xmlChar_array (C.size_t);
-					for C_Value'Address use Z_Value'Address;
+					Name : String renames Event.Name.all;
+					Name_Length : constant C.size_t := Name'Length;
+					C_Name : xmlChar_array (0 .. Name_Length); -- NUL
+					Value : String renames Event.Value.all;
+					Value_Length : constant C.size_t := Value'Length;
+					C_Value : xmlChar_array (0 .. Value_Length); -- NUL
 				begin
+					memcpy (C_Name'Address, Name'Address, Name_Length);
+					C_Name (Name_Length) := C.libxml.xmlstring.xmlChar'Val (0);
+					memcpy (C_Value'Address, Value'Address, Value_Length);
+					C_Value (Value_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteAttribute (
 						NC_Object.Raw,
@@ -781,11 +793,13 @@ package body XML is
 			when Text =>
 				Check_No_Zero (Event.Content.all);
 				declare
-					Z_Content : aliased String :=
-						Event.Content.all & Character'Val (0);
-					C_Content : xmlChar_array (C.size_t);
-					for C_Content'Address use Z_Content'Address;
+					Content : String renames Event.Content.all;
+					Content_Length : constant C.size_t := Content'Length;
+					C_Content : xmlChar_array (0 .. Content_Length); -- NUL
 				begin
+					memcpy (C_Content'Address, Content'Address, Content_Length);
+					C_Content (Content_Length) :=
+						C.libxml.xmlstring.xmlChar'Val (0);
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteString (
 						NC_Object.Raw,
@@ -797,11 +811,13 @@ package body XML is
 			when CDATA =>
 				Check_No_Zero (Event.Content.all);
 				declare
-					Z_Content : aliased String :=
-						Event.Content.all & Character'Val (0);
-					C_Content : xmlChar_array (C.size_t);
-					for C_Content'Address use Z_Content'Address;
+					Content : String renames Event.Content.all;
+					Content_Length : constant C.size_t := Content'Length;
+					C_Content : xmlChar_array (0 .. Content_Length); -- NUL
 				begin
+					memcpy (C_Content'Address, Content'Address, Content_Length);
+					C_Content (Content_Length) :=
+						C.libxml.xmlstring.xmlChar'Val (0);
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteCDATA (
 						NC_Object.Raw,
@@ -819,11 +835,13 @@ package body XML is
 			when Comment =>
 				Check_No_Zero (Event.Content.all);
 				declare
-					Z_Content : aliased String :=
-						Event.Content.all & Character'Val (0);
-					C_Content : xmlChar_array (C.size_t);
-					for C_Content'Address use Z_Content'Address;
+					Content : String renames Event.Content.all;
+					Content_Length : constant C.size_t := Content'Length;
+					C_Content : xmlChar_array (0 .. Content_Length); -- NUL
 				begin
+					memcpy (C_Content'Address, Content'Address, Content_Length);
+					C_Content (Content_Length) :=
+						C.libxml.xmlstring.xmlChar'Val (0);
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteComment (
 						NC_Object.Raw,
@@ -836,9 +854,9 @@ package body XML is
 				raise Program_Error; -- unimplemented
 			when Document_Type =>
 				declare
-					Public_Id_Length : Natural := 0;
-					System_Id_Length : Natural := 0;
-					Subset_Length : Natural := 0;
+					Public_Id_Length : C.size_t := 0;
+					System_Id_Length : C.size_t := 0;
+					Subset_Length : C.size_t := 0;
 				begin
 					Check_No_Zero (Event.Name.all);
 					if Event.Public_Id /= null then
@@ -854,36 +872,43 @@ package body XML is
 						Subset_Length := Event.Subset'Length + 1;
 					end if;
 					declare
-						Z_Name : aliased String :=
-							Event.Name.all & Character'Val (0);
-						C_Name : xmlChar_array (C.size_t);
-						for C_Name'Address use Z_Name'Address;
-						Z_Public_Id : aliased String (1 .. Public_Id_Length);
-						C_Public_Id : xmlChar_array (C.size_t);
-						for C_Public_Id'Address use Z_Public_Id'Address;
+						Name : String renames Event.Name.all;
+						Name_Length : constant C.size_t := Name'Length;
+						C_Name : xmlChar_array (0 .. Name_Length); -- NULL
+						C_Public_Id : xmlChar_array (0 .. Public_Id_Length); -- NUL
 						P_Public_Id : access constant C.libxml.xmlstring.xmlChar;
-						Z_System_Id : aliased String (1 .. System_Id_Length);
-						C_System_Id : xmlChar_array (C.size_t);
-						for C_System_Id'Address use Z_System_Id'Address;
+						C_System_Id : xmlChar_array (0 .. System_Id_Length); -- NUL
 						P_System_Id : access constant C.libxml.xmlstring.xmlChar;
-						Z_Subset : aliased String (1 .. Subset_Length);
-						C_Subset : xmlChar_array (C.size_t);
-						for C_Subset'Address use Z_Subset'Address;
+						C_Subset : xmlChar_array (0 .. Subset_Length); -- NUL
 						P_Subset : access constant C.libxml.xmlstring.xmlChar;
 					begin
+						memcpy (C_Name'Address, Name'Address, Name_Length);
+						C_Name (Name_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 						if Event.Public_Id /= null then
-							Z_Public_Id (1 .. Public_Id_Length) := Event.Public_Id.all;
-							Z_Public_Id (Z_Public_Id'Last) := Character'Val (0);
+							memcpy (
+								C_Public_Id'Address,
+								Event.Public_Id.all'Address,
+								Public_Id_Length);
+							C_Public_Id (Public_Id_Length) :=
+								C.libxml.xmlstring.xmlChar'Val (0);
 							P_Public_Id := C_Public_Id (C_Public_Id'First)'Access;
 						end if;
 						if Event.System_Id /= null then
-							Z_System_Id (1 .. System_Id_Length) := Event.System_Id.all;
-							Z_System_Id (Z_System_Id'Last) := Character'Val (0);
+							memcpy (
+								C_System_Id'Address,
+								Event.System_Id.all'Address,
+								System_Id_Length);
+							C_System_Id (System_Id_Length) :=
+								C.libxml.xmlstring.xmlChar'Val (0);
 							P_System_Id := C_System_Id (C_System_Id'First)'Access;
 						end if;
 						if Event.Subset /= null then
-							Z_Subset (1 .. Subset_Length) := Event.Subset.all;
-							Z_Subset (Z_Subset'Last) := Character'Val (0);
+							memcpy (
+								C_Subset'Address,
+								Event.Subset.all'Address,
+								Subset_Length);
+							C_Subset (Subset_Length) :=
+								C.libxml.xmlstring.xmlChar'Val (0);
 							P_Subset := C_Subset (C_Subset'First)'Access;
 						end if;
 						Clear_Last_Error;
@@ -954,22 +979,20 @@ package body XML is
 	is
 		NC_Object : Non_Controlled_Writer
 			renames Controlled_Writers.Reference (Object).all;
-		Version_Length : Natural := 0;
+		Version_Length : C.size_t := 0;
 	begin
 		if Version /= null then
 			Check_No_Zero (Version.all);
 			Version_Length := Version'Length + 1;
 		end if;
 		declare
-			Z_Version : aliased String (1 .. Version_Length);
-			C_Version : C.char_array (C.size_t);
-			for C_Version'Address use Z_Version'Address;
+			C_Version : C.char_array (0 .. Version_Length); -- NUL
 			P_Version : access constant C.char := null;
 			P_Encoding : access constant C.char := null;
 		begin
 			if Version /= null then
-				Z_Version (1 .. Version'Length) := Version.all;
-				Z_Version (Z_Version'Last) := Character'Val (0);
+				memcpy (C_Version'Address, Version.all'Address, Version_Length);
+				C_Version (Version_Length) := C.char'Val (0);
 				P_Version := C_Version (C_Version'First)'Access;
 			end if;
 			if Encoding /= null then

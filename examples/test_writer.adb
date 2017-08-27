@@ -123,7 +123,8 @@ procedure test_writer is
 					To_void_ptr (L_out),
 					C.size_t (out_size) + 1));
 				declare
-					out_Array : array (C.size_t) of C.libxml.xmlstring.xmlChar
+					out_Array : array (0 .. C.size_t (out_size)) of
+						C.libxml.xmlstring.xmlChar
 						with Convention => C;
 					for out_Array'Address use System.Address (To_void_ptr (L_out));
 				begin

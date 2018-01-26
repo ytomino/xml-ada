@@ -1,9 +1,7 @@
 SOURCEDIR=../source
 
-HOST=$(shell gcc -dumpmachine)
+HOST:=$(shell gcc -dumpmachine)
 TARGET=$(HOST)
-
-VERSION=$(shell gcc -dumpversion)
 
 BUILDDIR=$(TARGET).build
 
@@ -41,6 +39,7 @@ endif
 endif
 
 ifneq ($(DRAKE_RTSROOT),)
+VERSION:=$(shell gcc -dumpversion)
 DRAKE_RTSDIR=$(DRAKE_RTSROOT)/$(TARGET)/$(VERSION)
 endif
 ifneq ($(DRAKE_RTSDIR),)

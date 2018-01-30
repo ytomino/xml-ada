@@ -26,15 +26,12 @@ HFLAGS=
 ifeq ($(TARGET),$(HOST))
 ifneq ($(findstring darwin,$(TARGET)),)
 HFLAGS=-I/usr/include/libxml2
-endif
-else
-ifneq ($(findstring freebsd,$(TARGET)),)
+else ifneq ($(findstring freebsd,$(TARGET)),)
 LFLAGS=-lpthread
 HFLAGS=-I/usr/local/$(TARGET)/include/libxml2
-endif
-ifneq ($(findstring linux,$(TARGET)),)
+else ifneq ($(findstring linux-gnu,$(TARGET)),)
 LFLAGS=
-HFLAGS=-I/usr/local/$(TARGET)/include/libxml2
+HFLAGS:=$(shell pkg-config --cflags-only-I libxml-2.0)
 endif
 endif
 

@@ -94,14 +94,13 @@ package body XML is
 		len : C.signed_int)
 		return C.signed_int
 	is
-		procedure Input (Item : out String; Last : out Natural)
-			with Import;
-		for Input'Address use System.Address (context);
+		type I is access procedure (Item : out String; Last : out Natural);
+		function To_Input is new Ada.Unchecked_Conversion (C.void_ptr, I);
 		Item : String (1 .. Natural (len));
 		for Item'Address use buffer.all'Address;
 		Last : Natural;
 	begin
-		Input (Item, Last);
+		To_Input (context) (Item, Last);
 		return C.signed_int (Last);
 	end Read_Handler;
 	
@@ -118,13 +117,12 @@ package body XML is
 		len : C.signed_int)
 		return C.signed_int
 	is
-		procedure Output (Item : in String)
-			with Import;
-		for Output'Address use System.Address (context);
+		type O is access procedure (Item : in String);
+		function To_Output is new Ada.Unchecked_Conversion (C.void_ptr, O);
 		Item : String (1 .. Natural (len));
 		for Item'Address use buffer.all'Address;
 	begin
-		Output (Item);
+		To_Output (context) (Item);
 		return len;
 	end Write_Handler;
 	
@@ -423,7 +421,10 @@ package body XML is
 		Input : not null access procedure (Item : out String; Last : out Natural);
 		Encoding : Encoding_Type := No_Encoding;
 		URI : String := "")
-		return Reader is
+		return Reader
+	is
+		type I is access procedure (Item : out String; Last : out Natural);
+		function To_void_ptr is new Ada.Unchecked_Conversion (I, C.void_ptr);
 	begin
 		Check_Version;
 		Install_Error_Handlers;
@@ -449,7 +450,7 @@ package body XML is
 					NC_Result.Raw := C.libxml.xmlreader.xmlReaderForIO (
 						Read_Handler'Access,
 						null,
-						C.void_ptr (Input.all'Address),
+						To_void_ptr (Input),
 						P_URI,
 						P_Encoding,
 						0);
@@ -673,7 +674,10 @@ package body XML is
 		Encoding : Encoding_Type := No_Encoding;
 		Version : access constant String := null;
 		Standalone : Standalone_Type := No_Specific)
-		return Writer is
+		return Writer
+	is
+		type O is access procedure (Item : in String);
+		function To_void_ptr is new Ada.Unchecked_Conversion (O, C.void_ptr);
 	begin
 		Check_Version;
 		Install_Error_Handlers;
@@ -682,7 +686,7 @@ package body XML is
 				C.libxml.xmlIO.xmlOutputBufferCreateIO (
 					Write_Handler'Access,
 					null,
-					C.void_ptr (Output.all'Address),
+					To_void_ptr (Output),
 					Encoding);
 		begin
 			if Buffer = null then

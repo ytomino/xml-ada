@@ -39,7 +39,6 @@ procedure test_writer is
 	use type C.char_array;
 	use type C.signed_int;
 	use type C.size_t;
-	use type C.stdio.FILE_ptr;
 	use type C.libxml.encoding.xmlCharEncodingHandlerPtr;
 	use type C.libxml.tree.xmlBufferPtr;
 	use type C.libxml.tree.xmlDocPtr;
@@ -521,7 +520,7 @@ procedure test_writer is
 		rc : C.signed_int;
 		writer : C.libxml.xmlwriter.xmlTextWriterPtr;
 		buf : C.libxml.tree.xmlBufferPtr;
-		fp : C.stdio.FILE_ptr;
+		fp : access C.stdio.FILE;
 		Dummy_signed_int : C.signed_int;
 	begin
 		-- Create a new XML buffer, to which the XML document will be written

@@ -91,12 +91,12 @@ procedure test_reader is
 		C.char_const_ptr,
 		C.libxml.xmlstring.xmlChar_const_ptr);
 	Write_Mode : constant C.char_array := "w" & C.char'Val (0);
-	stdout : C.stdio.FILE_ptr;
+	stdout : access C.stdio.FILE;
 	procedure fwrite (
 		ptr : not null access constant C.char;
 		size : in C.size_t;
 		nitems : in C.size_t;
-		stream : in C.stdio.FILE_ptr)
+		stream : access C.stdio.FILE)
 	is
 		Dummy_size_t : C.size_t;
 	begin
@@ -108,7 +108,7 @@ procedure test_reader is
 	end fwrite;
 	procedure fputs (
 		s : not null access constant C.char;
-		stream : in C.stdio.FILE_ptr)
+		stream : access C.stdio.FILE)
 	is
 		Dummy_signed_int : C.signed_int;
 	begin
@@ -116,13 +116,13 @@ procedure test_reader is
 	end fputs;
 	procedure fputs (
 		s : in C.char_array;
-		stream : in C.stdio.FILE_ptr) is
+		stream : access C.stdio.FILE) is
 	begin
 		fputs (s (s'First)'Access, stream);
 	end fputs;
 	procedure fputd (
 		d : in C.signed_int;
-		stream : in C.stdio.FILE_ptr)
+		stream : access C.stdio.FILE)
 	is
 		s : C.char_array (0 .. 10);
 		i : C.size_t := s'Last;

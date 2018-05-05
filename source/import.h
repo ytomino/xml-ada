@@ -4,6 +4,15 @@
 #include <sys/signal.h> /* avoiding circular dependency */
 #elif defined(__FreeBSD__)
 #include <stdint.h> /* before sys/cdefs.h */
+#elif defined(__gnu_linux__)
+#if !defined(_BITS_LIBIO_H)
+#include <features.h> /* __GLIBC_PREREQ */
+#if __GLIBC_PREREQ(2, 27)
+#define _LIBIO_H
+#include <bits/libio.h> /* before stdio.h */
+#undef _LIBIO_H
+#endif
+#endif
 #endif
 #include <libxml/xmlversion.h>
 #undef LIBXML_EXPR_ENABLED
@@ -17,4 +26,10 @@
 /* undef the macro returning struct by value */
 #if defined(xmlDefaultSAXLocator)
 #undef xmlDefaultSAXLocator
+#endif
+
+#if defined(__gnu_linux__)
+#if __GLIBC_PREREQ(2, 27)
+#pragma for Ada "stdio.h" include "bits/types/FILE.h"
+#endif
 #endif

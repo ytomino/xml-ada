@@ -144,7 +144,6 @@ package body XML is
 		NC_Object : Non_Controlled_Reader
 			renames Controlled_Readers.Reference (Object).all;
 	begin
-		Clear_Last_Error;
 		case NC_Object.State is
 			when Next | Remaining =>
 				if NC_Object.State = Remaining then
@@ -189,6 +188,7 @@ package body XML is
 											Value'Unrestricted_Access,
 											Parsed_Data.Value_Constraint'Access));
 								end;
+								Clear_Last_Error;
 								declare
 									Moved : constant C.signed_int :=
 										C.libxml.xmlreader.xmlTextReaderMoveToNextAttribute (
@@ -200,6 +200,7 @@ package body XML is
 										NC_Object.State := Next; -- more attributes
 									else
 										-- end of attributes
+										Clear_Last_Error;
 										if C.libxml.xmlreader.xmlTextReaderMoveToElement (
 											NC_Object.Raw) < 0
 										then
@@ -235,6 +236,7 @@ package body XML is
 									NC_Object.Raw) > 0
 								then
 									NC_Object.State := Next;
+									Clear_Last_Error;
 									if C.libxml.xmlreader.xmlTextReaderMoveToFirstAttribute (
 										NC_Object.Raw) < 0
 									then

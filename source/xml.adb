@@ -575,7 +575,11 @@ package body XML is
 		Result : constant C.signed_int :=
 			C.libxml.xmlreader.xmlTextReaderStandalone (NC_Object.Raw);
 	begin
-		return Standalone_Type'Enum_Val (Result);
+		if Result < -1 then
+			return No_Specific; -- undocumented error
+		else
+			return Standalone_Type'Enum_Val (Result);
+		end if;
 	end Standalone;
 	
 	function Base_URI (Object : Reader) return String is

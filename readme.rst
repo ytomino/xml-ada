@@ -38,7 +38,7 @@ I recommend the MIT License that is same as libxml2.
 
 **license of xml-ada (1)** ::
 
- Copyright 2011 YT. All rights reserved.
+ Copyright 2011-2020 YT. All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -62,7 +62,7 @@ I recommend the MIT License that is same as libxml2.
 
 **license of xml-ada (2)** ::
 
- Copyright (c) 2011 YT
+ Copyright (c) 2011-2020 YT
  
  Permission is hereby granted, free of charge, to any person obtaining a copy of
  this software and associated documentation files (the "Software"), to deal in

@@ -3,7 +3,7 @@ SOURCEDIR=../source
 HOST:=$(shell gcc -dumpmachine)
 TARGET=$(HOST)
 
-BUILDDIR=$(TARGET).build
+BUILDDIR=$(TARGET).noindex
 
 ifeq ($(TARGET),$(HOST))
 GCCPREFIX=
@@ -65,7 +65,7 @@ $(BUILDDIR)/%: %.adb $(wildcard $(SOURCEDIR)/*) | $(BUILDDIR) $(IMPORTDIR)
 	cd $(BUILDDIR) && $(GCCPREFIX)gnatbind$(GCCSUFFIX) $(basename $(notdir $<)).ali $(GFLAGS) $(BFLAGS)
 	cd $(BUILDDIR) && $(GCCPREFIX)gnatlink$(GCCSUFFIX) -o ../$@ $(basename $(notdir $<)).ali $(GFLAGS) $(LFLAGS)
 
-# make build/test_serialize YAMLDIR=yaml-ada/source
+# make test_serialize YAMLDIR=yaml-ada/source
 
 YAMLDIR=../../yaml-ada/source
 
@@ -86,7 +86,7 @@ $(IMPORTDIR): $(SOURCEDIR)/import.h
 endif
 
 clean:
-	-rm -rf *.build bin
+	-rm -rf *.noindex bin
 	-rm reader1.tmp reader2.tmp reader3.tmp reader4.tmp
 	-rm writer1.res writer2.res writer3.res writer4.res
 	-rm test_xml.xml

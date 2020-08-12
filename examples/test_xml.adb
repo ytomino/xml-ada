@@ -13,9 +13,8 @@ procedure test_xml is
 			return False;
 		else
 			case Left.Event_Type is
-				when XML.Element_Start | XML.Attribute
-					| XML.Processing_Instruction | XML.Document_Type
-				=>
+				when XML.Element_Start | XML.Attribute | XML.Processing_Instruction
+					| XML.Document_Type =>
 					if Left.Name.all /= Right.Name.all then
 						return False;
 					else
@@ -24,23 +23,26 @@ procedure test_xml is
 								return Left.Value.all = Right.Value.all;
 							when XML.Document_Type =>
 								if (Left.Public_Id /= null or else Right.Public_Id /= null)
-									and then (Left.Public_Id = null
-										or else Right.Public_Id = null
-										or else Left.Public_Id.all /= Right.Public_Id.all)
+									and then (
+										Left.Public_Id = null
+											or else Right.Public_Id = null
+											or else Left.Public_Id.all /= Right.Public_Id.all)
 								then
 									return False;
 								end if;
 								if (Left.System_Id /= null or else Right.System_Id /= null)
-									and then (Left.System_Id = null
-										or else Right.System_Id = null
-										or else Left.System_Id.all /= Right.System_Id.all)
+									and then (
+										Left.System_Id = null
+											or else Right.System_Id = null
+											or else Left.System_Id.all /= Right.System_Id.all)
 								then
 									return False;
 								end if;
 								if (Left.Subset /= null or else Right.Subset /= null)
-									and then (Left.Subset = null
-										or else Right.Subset = null
-										or else Left.Subset.all /= Right.Subset.all)
+									and then (
+										Left.Subset = null
+											or else Right.Subset = null
+											or else Left.Subset.all /= Right.Subset.all)
 								then
 									return False;
 								end if;
@@ -49,9 +51,8 @@ procedure test_xml is
 								return True;
 						end case;
 					end if;
-				when XML.Text | XML.CDATA | XML.Comment
-					| XML.Whitespace | XML.Significant_Whitespace
-				=>
+				when XML.Text | XML.CDATA | XML.Comment | XML.Whitespace
+					| XML.Significant_Whitespace =>
 					return Left.Content.all = Right.Content.all;
 				when others =>
 					return True;
@@ -101,11 +102,12 @@ procedure test_xml is
 	UTF_8 : constant XML.Encoding_Type := XML.Find ("utf-8");
 begin
 	declare
-		W : XML.Writer := XML.Create (
-			Ada.Text_IO.Put'Access,
-			UTF_8,
-			Version_1_0'Access,
-			XML.Yes);
+		W : XML.Writer :=
+			XML.Create (
+				Ada.Text_IO.Put'Access,
+				UTF_8,
+				Version_1_0'Access,
+				XML.Yes);
 	begin
 		XML.Set_Indent (W, (1 => Latin_1.HT));
 		for I in Data'Range loop
@@ -116,15 +118,14 @@ begin
 	declare
 		File : Ada.Streams.Stream_IO.File_Type;
 	begin
-		Ada.Streams.Stream_IO.Create (
-			File,
-			Name => Test_File_Name);
+		Ada.Streams.Stream_IO.Create (File, Name => Test_File_Name);
 		declare
-			W : XML.Writer := XML.Streams.Create (
-				Ada.Streams.Stream_IO.Stream (File),
-				UTF_8,
-				Version_1_0'Access,
-				XML.Yes);
+			W : XML.Writer :=
+				XML.Streams.Create (
+					Ada.Streams.Stream_IO.Stream (File),
+					UTF_8,
+					Version_1_0'Access,
+					XML.Yes);
 		begin
 			Ada.Text_IO.Put ("Writing...");
 			for I in Data'Range loop
@@ -139,14 +140,11 @@ begin
 	declare
 		File : Ada.Streams.Stream_IO.File_Type;
 	begin
-		Ada.Streams.Stream_IO.Open (
-			File,
-			Ada.Streams.Stream_IO.In_File,
+		Ada.Streams.Stream_IO.Open (File, Ada.Streams.Stream_IO.In_File,
 			Name => Test_File_Name);
 		declare
-			R : XML.Reader := XML.Streams.Create (
-				Ada.Streams.Stream_IO.Stream (File),
-				UTF_8);
+			R : XML.Reader :=
+				XML.Streams.Create (Ada.Streams.Stream_IO.Stream (File), UTF_8);
 		begin
 			if XML.Version (R).all /= Version_1_0 then
 				raise Program_Error;

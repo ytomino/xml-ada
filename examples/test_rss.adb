@@ -49,8 +49,8 @@ procedure test_rss is
 		case RSS_Version is
 			when RSS_1 =>
 				declare
-					type T is (Root, Channel, Title, Link, Creator,
-						Item, Item_Title, Item_Link, Unknown);
+					type T is
+						(Root, Channel, Title, Link, Creator, Item, Item_Title, Item_Link, Unknown);
 					S : array (1 .. 10) of T := (1 => Root, others => Unknown);
 					Top : Natural := S'First;
 					procedure Push (N : T) is
@@ -84,8 +84,7 @@ procedure test_rss is
 								case Event.Event_Type is
 									when XML.Attribute =>
 										if Event.Name.all = "rdf:about" then
-											Ada.Text_IO.Put_Line (
-												Latin_1.HT & "about: " & Event.Value.all);
+											Ada.Text_IO.Put_Line (Latin_1.HT & "about: " & Event.Value.all);
 										end if;
 									when XML.Element_Start =>
 										if Event.Name.all = "title" then
@@ -107,8 +106,7 @@ procedure test_rss is
 							when Title =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT & "title: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "title: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -117,8 +115,7 @@ procedure test_rss is
 							when Link =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT & "link: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "link: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -127,8 +124,7 @@ procedure test_rss is
 							when Creator =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT & "creator: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "creator: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -138,9 +134,7 @@ procedure test_rss is
 								case Event.Event_Type is
 									when XML.Attribute =>
 										if Event.Name.all = "rdf:about" then
-											Ada.Text_IO.Put_Line (
-												Latin_1.HT
-												& "item about: " & Event.Value.all);
+											Ada.Text_IO.Put_Line (Latin_1.HT & "item about: " & Event.Value.all);
 										end if;
 									when XML.Element_Start =>
 										if Event.Name.all = "title" then
@@ -160,9 +154,7 @@ procedure test_rss is
 							when Item_Title =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT
-											& "item title: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "item title: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -171,9 +163,7 @@ procedure test_rss is
 							when Item_Link =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT
-											& "item link: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "item link: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -196,8 +186,8 @@ procedure test_rss is
 				end;
 			when RSS_2 =>
 				declare
-					type T is (Root, Channel, Title, Link, Creator,
-						Item, Item_Title, Item_Link, Unknown);
+					type T is
+						(Root, Channel, Title, Link, Creator, Item, Item_Title, Item_Link, Unknown);
 					S : array (1 .. 10) of T := (1 => Root, others => Unknown);
 					Top : Natural := S'First;
 					procedure Push (N : T) is
@@ -249,8 +239,7 @@ procedure test_rss is
 							when Title =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT & "title: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "title: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -259,8 +248,7 @@ procedure test_rss is
 							when Link =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT & "link: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "link: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -269,8 +257,7 @@ procedure test_rss is
 							when Creator =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT & "creator: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "creator: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -296,9 +283,7 @@ procedure test_rss is
 							when Item_Title =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT
-											& "item title: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "item title: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -307,9 +292,7 @@ procedure test_rss is
 							when Item_Link =>
 								case Event.Event_Type is
 									when XML.Text =>
-										Ada.Text_IO.Put_Line (
-											Latin_1.HT
-											& "item link: " & Event.Content.all);
+										Ada.Text_IO.Put_Line (Latin_1.HT & "item link: " & Event.Content.all);
 									when XML.Element_End =>
 										Top := Top - 1;
 									when others =>
@@ -335,14 +318,11 @@ procedure test_rss is
 	procedure Read_RSS_From_File (Name : in String) is
 		File : Ada.Streams.Stream_IO.File_Type;
 	begin
-		Ada.Streams.Stream_IO.Open (
-			File,
-			Ada.Streams.Stream_IO.In_File,
-			Name => Name);
+		Ada.Streams.Stream_IO.Open (File, Ada.Streams.Stream_IO.In_File, Name => Name);
 		declare
-			R : XML.Reader := XML.Streams.Create (
-				Ada.Streams.Stream_IO.Stream (File),
-				URI => "file://" & Name);
+			R : XML.Reader :=
+				XML.Streams.Create (Ada.Streams.Stream_IO.Stream (File),
+					URI => "file://" & Name);
 		begin
 			Read_RSS (R);
 		end;

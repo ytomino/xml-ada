@@ -94,9 +94,8 @@ package body Serialization.XML is
 			case Event.Event_Type is
 				when Standard.XML.Document_Type =>
 					if Event.Name.all /= Tag then
-						raise Standard.XML.Data_Error with
-							"""" & Event.Name.all & """ is not expected tag ("""
-							& Tag & """) .";
+						raise Standard.XML.Data_Error
+							with """" & Event.Name.all & """ is not expected tag (""" & Tag & """) .";
 					end if;
 				when others =>
 					Handle_Name (Object, In_Mapping, Event, Tag);
@@ -110,8 +109,8 @@ package body Serialization.XML is
 			Standard.XML.Read (Object.Reader.all, Parsing_Entry);
 			Process (Standard.XML.Value (Parsing_Entry).Element.all);
 			if Object.Level = 0 then
-				raise Standard.XML.Data_Error with
-					"expected tag (""" & Tag & """) was not found.";
+				raise Standard.XML.Data_Error
+					with "expected tag (""" & Tag & """) was not found.";
 			end if;
 		end if;
 	end Read_Name_On_Start;
@@ -124,8 +123,8 @@ package body Serialization.XML is
 		case Standard.XML.Value (Parsing_Entry).Element.Event_Type is
 			when Standard.XML.Text | Standard.XML.CDATA =>
 				Object.Next_Kind := Value;
-				Object.Next_Value := new String'(
-					Standard.XML.Value (Parsing_Entry).Element.Content.all);
+				Object.Next_Value :=
+					new String'(Standard.XML.Value (Parsing_Entry).Element.Content.all);
 			when Standard.XML.Element_Start =>
 				if Standard.XML.Value (Parsing_Entry).Element.Name.all =
 					Sequence_Item_Name
@@ -134,8 +133,8 @@ package body Serialization.XML is
 					Object.Next_Next_Name := Sequence_Item_Name'Access;
 				else
 					Object.Next_Kind := Enter_Mapping;
-					Object.Next_Next_Name := new String'(
-						Standard.XML.Value (Parsing_Entry).Element.Name.all);
+					Object.Next_Next_Name :=
+						new String'(Standard.XML.Value (Parsing_Entry).Element.Name.all);
 				end if;
 			when others =>
 				raise Standard.XML.Data_Error;
@@ -154,16 +153,17 @@ package body Serialization.XML is
 		Object : not null access XML_Writer;
 		Name : in String) is
 	begin
-		Standard.XML.Write (Object.Writer.all, (
-			Event_Type => Standard.XML.Element_Start,
-			Name => Name'Unrestricted_Access));
+		Standard.XML.Write (
+			Object.Writer.all,
+			(Event_Type => Standard.XML.Element_Start, Name => Name'Unrestricted_Access));
 	end Write_Element_Start;
 	
 	procedure Write_Element_End (
 		Object : not null access XML_Writer) is
 	begin
-		Standard.XML.Write (Object.Writer.all, (
-			Event_Type => Standard.XML.Element_End));
+		Standard.XML.Write (
+			Object.Writer.all,
+			(Event_Type => Standard.XML.Element_End));
 	end Write_Element_End;
 	
 	-- implementation
@@ -178,16 +178,15 @@ package body Serialization.XML is
 		S : Serializer_Access;
 		In_Controlled : Boolean := False;
 	begin
-		R := new XML_Reader'(
-			Reader => Reader,
-			Next_Kind => End_Of_Stream,
-			Next_Name => Null_String'Access,
-			Next_Value => Null_String'Access,
-			Next_Next_Name => null,
-			Level => 0);
-		S := new Serializer'(
-			Direction => Reading,
-			Reader => R);
+		R :=
+			new XML_Reader'(
+				Reader => Reader,
+				Next_Kind => End_Of_Stream,
+				Next_Name => Null_String'Access,
+				Next_Value => Null_String'Access,
+				Next_Next_Name => null,
+				Level => 0);
+		S := new Serializer'(Direction => Reading, Reader => R);
 		return Result : constant Reference_Type :=
 			(Ada.Finalization.Limited_Controlled
 				with
@@ -263,12 +262,8 @@ package body Serialization.XML is
 		S : Serializer_Access;
 		In_Controlled : Boolean := False;
 	begin
-		W := new XML_Writer'(
-			Writer => Writer,
-			Level => 0);
-		S := new Serializer'(
-			Direction => Writing,
-			Writer => W);
+		W := new XML_Writer'(Writer => Writer, Level => 0);
+		S := new Serializer'(Direction => Writing, Writer => W);
 		return Result : constant Reference_Type :=
 			(Ada.Finalization.Limited_Controlled
 				with
@@ -279,12 +274,13 @@ package body Serialization.XML is
 		do
 			pragma Unreferenced (Result);
 			In_Controlled := True;
-			Standard.XML.Write (Writer.all, (
-				Event_Type => Standard.XML.Document_Type,
-				Name => Tag'Unrestricted_Access,
-				Public_Id => null,
-				System_Id => null,
-				Subset => null));
+			Standard.XML.Write (
+				Writer.all,
+				(Event_Type => Standard.XML.Document_Type,
+					Name => Tag'Unrestricted_Access,
+					Public_Id => null,
+					System_Id => null,
+					Subset => null));
 			Write_Element_Start (W, Tag);
 		end return;
 	exception
@@ -304,9 +300,9 @@ package body Serialization.XML is
 		if Name /= "" then
 			Write_Element_Start (Object, Name);
 		end if;
-		Standard.XML.Write (Object.Writer.all, (
-			Event_Type => Standard.XML.Text,
-			Content => Item'Unrestricted_Access));
+		Standard.XML.Write (
+			Object.Writer.all,
+			(Event_Type => Standard.XML.Text, Content => Item'Unrestricted_Access));
 		if Name /= "" then
 			Write_Element_End (Object);
 		end if;

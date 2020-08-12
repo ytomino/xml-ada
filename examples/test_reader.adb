@@ -33,7 +33,7 @@
 --
 -- section: xmlReader
 -- synopsis: Show how to extract subdocuments with xmlReader
--- purpose: Demonstrate the use of xmlTextReaderPreservePattern() 
+-- purpose: Demonstrate the use of xmlTextReaderPreservePattern()
 --          to parse an XML file with the xmlReader while collecting
 --          only some subparts of the document.
 --          (Note that the XMLReader functions require libxml2 version later
@@ -72,8 +72,8 @@ with C.libxml.tree;
 with C.libxml.xmlversion;
 --pragma Compile_Time_Error (
 --	not C.libxml.xmlversion.LIBXML_READER_ENABLED
---	or else not C.libxml.xmlversion.LIBXML_PATTERN_ENABLED
---	or else not C.libxml.xmlversion.LIBXML_OUTPUT_ENABLED,
+--		or else not C.libxml.xmlversion.LIBXML_PATTERN_ENABLED
+--		or else not C.libxml.xmlversion.LIBXML_OUTPUT_ENABLED,
 --	"Reader, Pattern or output support not compiled in");
 procedure test_reader is
 	pragma Linker_Options ("-lxml2");
@@ -84,12 +84,14 @@ procedure test_reader is
 	use type C.libxml.tree.xmlDocPtr;
 	use type C.libxml.xmlreader.xmlTextReaderPtr;
 	use type C.libxml.xmlstring.xmlChar_const_ptr;
-	function To_char_const_ptr is new Ada.Unchecked_Conversion (
-		C.libxml.xmlstring.xmlChar_const_ptr,
-		C.char_const_ptr);
-	function To_xmlChar_const_ptr is new Ada.Unchecked_Conversion (
-		C.char_const_ptr,
-		C.libxml.xmlstring.xmlChar_const_ptr);
+	function To_char_const_ptr is
+		new Ada.Unchecked_Conversion (
+			C.libxml.xmlstring.xmlChar_const_ptr,
+			C.char_const_ptr);
+	function To_xmlChar_const_ptr is
+		new Ada.Unchecked_Conversion (
+			C.char_const_ptr,
+			C.libxml.xmlstring.xmlChar_const_ptr);
 	Write_Mode : constant C.char_array := "w" & C.char'Val (0);
 	stdout : access C.stdio.FILE;
 	procedure fwrite (
@@ -100,11 +102,12 @@ procedure test_reader is
 	is
 		Dummy_size_t : C.size_t;
 	begin
-		Dummy_size_t := C.stdio.fwrite (
-			C.void_const_ptr (ptr.all'Address),
-			size,
-			nitems,
-			stream);
+		Dummy_size_t :=
+			C.stdio.fwrite (
+				C.void_const_ptr (ptr.all'Address),
+				size,
+				nitems,
+				stream);
 	end fwrite;
 	procedure fputs (
 		s : not null access constant C.char;
@@ -201,7 +204,8 @@ procedure test_reader is
 				C.libxml.xmlreader.xmlFreeTextReader (reader);
 				if ret /= 0 then
 					fputs (filename, C.stdio.stderr);
-					fputs (" : failed to parse" & C.char'Val (10) & C.char'Val (0),
+					fputs (
+						" : failed to parse" & C.char'Val (10) & C.char'Val (0),
 						C.stdio.stderr);
 				end if;
 			else
@@ -212,9 +216,10 @@ procedure test_reader is
 		end streamFile;
 		Dummy_signed_int : C.signed_int;
 	begin
-		stdout := C.stdio.fopen (
-			output (output'First)'Access,
-			Write_Mode (Write_Mode'First)'Access);
+		stdout :=
+			C.stdio.fopen (
+				output (output'First)'Access,
+				Write_Mode (Write_Mode'First)'Access);
 		streamFile (argv1 (argv1'First)'Access);
 		Dummy_signed_int := C.stdio.fclose (stdout);
 	end reader1;
@@ -236,16 +241,18 @@ procedure test_reader is
 		begin
 			-- Pass some special parsing options to activate DTD attribute defaulting,
 			-- entities substitution and DTD validation
-			reader := C.libxml.xmlreader.xmlReaderForFile (
-				filename,
-				null,
-				C.signed_int (C.unsigned_int'(
-					C.libxml.parser.xmlParserOption'Enum_Rep (
-						C.libxml.parser.XML_PARSE_DTDATTR) -- default DTD attributes
-					or C.libxml.parser.xmlParserOption'Enum_Rep (
-						C.libxml.parser.XML_PARSE_NOENT) -- substitute entities
-					or C.libxml.parser.xmlParserOption'Enum_Rep (
-						C.libxml.parser.XML_PARSE_DTDVALID)))); -- validate with the DTD
+			reader :=
+				C.libxml.xmlreader.xmlReaderForFile (
+					filename,
+					null,
+					C.signed_int (
+						C.unsigned_int'(
+							C.libxml.parser.xmlParserOption'Enum_Rep (
+									C.libxml.parser.XML_PARSE_DTDATTR) -- default DTD attributes
+								or C.libxml.parser.xmlParserOption'Enum_Rep (
+									C.libxml.parser.XML_PARSE_NOENT) -- substitute entities
+								or C.libxml.parser.xmlParserOption'Enum_Rep (
+									C.libxml.parser.XML_PARSE_DTDVALID)))); -- validate with the DTD
 			if reader /= null then
 				ret := C.libxml.xmlreader.xmlTextReaderRead (reader);
 				while ret = 1 loop
@@ -256,13 +263,15 @@ procedure test_reader is
 				if C.libxml.xmlreader.xmlTextReaderIsValid (reader) /= 1 then
 					fputs ("Document " & C.char'Val (0), C.stdio.stderr);
 					fputs (filename, C.stdio.stderr);
-					fputs (" does not validate" & C.char'Val (10) & C.char'Val (0),
+					fputs (
+						" does not validate" & C.char'Val (10) & C.char'Val (0),
 						C.stdio.stderr);
 				end if;
 				C.libxml.xmlreader.xmlFreeTextReader (reader);
 				if ret /= 0 then
 					fputs (filename, C.stdio.stderr);
-					fputs (" : failed to parse" & C.char'Val (10) & C.char'Val (0),
+					fputs (
+						" : failed to parse" & C.char'Val (10) & C.char'Val (0),
 						C.stdio.stderr);
 				end if;
 			else
@@ -273,9 +282,10 @@ procedure test_reader is
 		end streamFile;
 		Dummy_signed_int : C.signed_int;
 	begin
-		stdout := C.stdio.fopen (
-			output (output'First)'Access,
-			Write_Mode (Write_Mode'First)'Access);
+		stdout :=
+			C.stdio.fopen (
+				output (output'First)'Access,
+				Write_Mode (Write_Mode'First)'Access);
 		streamFile (argv1 (argv1'First)'Access);
 		Dummy_signed_int := C.stdio.fclose (stdout);
 	end reader2;
@@ -306,7 +316,8 @@ procedure test_reader is
 					null) < 0
 				then
 					fputs (filename, C.stdio.stderr);
-					fputs (" : failed add preserve pattern " & C.char'Val (0),
+					fputs (
+						" : failed add preserve pattern " & C.char'Val (0),
 						C.stdio.stderr);
 					fputs (To_char_const_ptr (pattern), C.stdio.stderr);
 					fputs (C.char'Val (10) & C.char'Val (0), C.stdio.stderr);
@@ -318,7 +329,8 @@ procedure test_reader is
 				end loop;
 				if ret /= 0 then
 					fputs (filename, C.stdio.stderr);
-					fputs (" : failed to parse" & C.char'Val (10) & C.char'Val (0),
+					fputs (
+						" : failed to parse" & C.char'Val (10) & C.char'Val (0),
 						C.stdio.stderr);
 					C.libxml.xmlreader.xmlFreeTextReader (reader);
 					return null;
@@ -340,12 +352,14 @@ procedure test_reader is
 		doc : C.libxml.tree.xmlDocPtr;
 		Dummy_signed_int : C.signed_int;
 	begin
-		stdout := C.stdio.fopen (
-			output (output'First)'Access,
-			Write_Mode (Write_Mode'First)'Access);
-		doc := extractFile (
-			filename (filename'First)'Access,
-			To_xmlChar_const_ptr (pattern (pattern'First)'Unchecked_Access));
+		stdout :=
+			C.stdio.fopen (
+				output (output'First)'Access,
+				Write_Mode (Write_Mode'First)'Access);
+		doc :=
+			extractFile (
+				filename (filename'First)'Access,
+				To_xmlChar_const_ptr (pattern (pattern'First)'Unchecked_Access));
 		if doc /= null then
 			-- ouptut the result.
 			Dummy_signed_int := C.libxml.tree.xmlDocDump (stdout, doc);
@@ -370,19 +384,22 @@ procedure test_reader is
 			-- be sure to clean it up at the end (see below).
 			docPtr := C.libxml.xmlreader.xmlTextReaderCurrentDoc (readerPtr);
 			if null = docPtr then
-				fputs ("failed to obtain document" & C.char'Val (10) & C.char'Val (0),
+				fputs (
+					"failed to obtain document" & C.char'Val (10) & C.char'Val (0),
 					C.stdio.stderr);
 				return;
 			end if;
 			URL := docPtr.URL;
 			if null = URL then
 				fputs (To_char_const_ptr (URL), C.stdio.stderr);
-				fputs (": Failed to obtain URL" & C.char'Val (10) & C.char'Val (0),
+				fputs (
+					": Failed to obtain URL" & C.char'Val (10) & C.char'Val (0),
 					C.stdio.stderr);
 			end if;
 			if ret /= 0 then
 				fputs (To_char_const_ptr (URL), C.stdio.stderr);
-				fputs (" : failed to parse" & C.char'Val (10) & C.char'Val (0),
+				fputs (
+					" : failed to parse" & C.char'Val (10) & C.char'Val (0),
 					C.stdio.stderr);
 				return;
 			end if;
@@ -393,17 +410,17 @@ procedure test_reader is
 		docPtr : C.libxml.tree.xmlDocPtr;
 		Dummy_signed_int : C.signed_int;
 	begin
-		stdout := C.stdio.fopen (
-			output (output'First)'Access,
-			Write_Mode (Write_Mode'First)'Access);
+		stdout :=
+			C.stdio.fopen (
+				output (output'First)'Access,
+				Write_Mode (Write_Mode'First)'Access);
 		-- Create a new reader for the first file and process the document.
-		readerPtr := C.libxml.xmlreader.xmlReaderForFile (
-			argv1 (argv1'First)'Access,
-			null,
-			0);
+		readerPtr :=
+			C.libxml.xmlreader.xmlReaderForFile (argv1 (argv1'First)'Access, null, 0);
 		if null = readerPtr then
 			fputs (argv1, C.stdio.stderr);
-			fputs (": failed to create reader" & C.char'Val (10) & C.char'Val (0),
+			fputs (
+				": failed to create reader" & C.char'Val (10) & C.char'Val (0),
 				C.stdio.stderr);
 			raise Program_Error;
 		end if;
@@ -414,16 +431,16 @@ procedure test_reader is
 				argv_i : access constant C.char;
 			begin
 				case i is
-					when 2 => argv_i := argv2 (argv2'First)'Access;
-					when 3 => argv_i := argv3 (argv3'First)'Access;
+					when 2 =>
+						argv_i := argv2 (argv2'First)'Access;
+					when 3 =>
+						argv_i := argv3 (argv3'First)'Access;
 				end case;
-				readerPtr := C.libxml.xmlreader.xmlReaderForFile (
-					argv_i,
-					null,
-					0);
+				readerPtr := C.libxml.xmlreader.xmlReaderForFile (argv_i, null, 0);
 				if null = readerPtr then
 					fputs (argv_i, C.stdio.stderr);
-					fputs (": failed to create reader" & C.char'Val (10) & C.char'Val (0),
+					fputs (
+						": failed to create reader" & C.char'Val (10) & C.char'Val (0),
 						C.stdio.stderr);
 					raise Program_Error;
 				end if;

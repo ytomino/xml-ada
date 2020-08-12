@@ -8,8 +8,7 @@ package body XML.Streams is
 	use type C.libxml.xmlwriter.xmlTextWriterPtr;
 	
 	procedure memcpy (dst, src : System.Address; n : C.size_t)
-		with Import,
-			Convention => Intrinsic, External_Name => "__builtin_memcpy";
+		with Import, Convention => Intrinsic, External_Name => "__builtin_memcpy";
 	
 	function Read_Handler (
 		context : C.void_ptr;
@@ -25,20 +24,20 @@ package body XML.Streams is
 		return C.signed_int
 	is
 		package Conv is
-			new System.Address_To_Access_Conversions (
-				Ada.Streams.Root_Stream_Type'Class);
+			new System.Address_To_Access_Conversions (Ada.Streams.Root_Stream_Type'Class);
 		Stream : constant Conv.Object_Pointer :=
 			Conv.To_Pointer (System.Address (context));
-		Item : Ada.Streams.Stream_Element_Array (
-			1 ..
-			Ada.Streams.Stream_Element_Offset (len));
+		Item :
+			Ada.Streams.Stream_Element_Array (
+				1 .. Ada.Streams.Stream_Element_Offset (len));
 		for Item'Address use buffer.all'Address;
 		Last : Ada.Streams.Stream_Element_Offset;
 	begin
 		begin
 			Ada.Streams.Read (Stream.all, Item, Last);
 		exception
-			when Ada.IO_Exceptions.End_Error => Last := 0;
+			when Ada.IO_Exceptions.End_Error =>
+				Last := 0;
 		end;
 		return C.signed_int (Last);
 	end Read_Handler;
@@ -57,13 +56,12 @@ package body XML.Streams is
 		return C.signed_int
 	is
 		package Conv is
-			new System.Address_To_Access_Conversions (
-				Ada.Streams.Root_Stream_Type'Class);
+			new System.Address_To_Access_Conversions (Ada.Streams.Root_Stream_Type'Class);
 		Stream : constant Conv.Object_Pointer :=
 			Conv.To_Pointer (System.Address (context));
-		Item : Ada.Streams.Stream_Element_Array (
-			1 ..
-			Ada.Streams.Stream_Element_Offset (len));
+		Item :
+			Ada.Streams.Stream_Element_Array (
+				1 .. Ada.Streams.Stream_Element_Offset (len));
 		for Item'Address use buffer.all'Address;
 	begin
 		Ada.Streams.Write (Stream.all, Item);
@@ -79,8 +77,7 @@ package body XML.Streams is
 		return Reader
 	is
 		package Conv is
-			new System.Address_To_Access_Conversions (
-				Ada.Streams.Root_Stream_Type'Class);
+			new System.Address_To_Access_Conversions (Ada.Streams.Root_Stream_Type'Class);
 	begin
 		Check_Version;
 		Install_Error_Handlers;
@@ -103,13 +100,14 @@ package body XML.Streams is
 					NC_Result : Non_Controlled_Reader
 						renames Controlled_Readers.Reference (Result).all;
 				begin
-					NC_Result.Raw := C.libxml.xmlreader.xmlReaderForIO (
-						Read_Handler'Access,
-						null,
-						C.void_ptr (Conv.To_Address (Conv.Object_Pointer (Stream))),
-						P_URI,
-						P_Encoding,
-						0);
+					NC_Result.Raw :=
+						C.libxml.xmlreader.xmlReaderForIO (
+							Read_Handler'Access,
+							null,
+							C.void_ptr (Conv.To_Address (Conv.Object_Pointer (Stream))),
+							P_URI,
+							P_Encoding,
+							0);
 					if NC_Result.Raw = null then
 						raise Use_Error;
 					end if;
@@ -127,8 +125,7 @@ package body XML.Streams is
 		return Writer
 	is
 		package Conv is
-			new System.Address_To_Access_Conversions (
-				Ada.Streams.Root_Stream_Type'Class);
+			new System.Address_To_Access_Conversions (Ada.Streams.Root_Stream_Type'Class);
 	begin
 		Check_Version;
 		Install_Error_Handlers;

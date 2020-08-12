@@ -31,7 +31,7 @@ with C.libxml.xmlstring;
 with C.libxml.xmlversion;
 --pragma Compile_Time_Error (
 --	not C.libxml.xmlversion.LIBXML_WRITER_ENABLED
---	or else not C.libxml.xmlversion.LIBXML_OUTPUT_ENABLED,
+--		or else not C.libxml.xmlversion.LIBXML_OUTPUT_ENABLED,
 --	"Writer or output support not compiled in");
 procedure test_writer is
 	pragma Linker_Options ("-lxml2");
@@ -45,21 +45,26 @@ procedure test_writer is
 	use type C.libxml.tree.xmlNodePtr;
 	use type C.libxml.xmlstring.xmlChar_ptr;
 	use type C.libxml.xmlwriter.xmlTextWriterPtr;
-	function To_void_ptr is new Ada.Unchecked_Conversion (
-		C.libxml.xmlstring.xmlChar_ptr,
-		C.void_ptr);
-	function To_char_const_ptr is new Ada.Unchecked_Conversion (
-		C.libxml.xmlstring.xmlChar_ptr,
-		C.char_const_ptr);
-	function To_unsigned_char_const_ptr is new Ada.Unchecked_Conversion (
-		C.char_const_ptr,
-		C.unsigned_char_const_ptr);
-	function To_xmlChar_ptr is new Ada.Unchecked_Conversion (
-		C.void_ptr,
-		C.libxml.xmlstring.xmlChar_ptr);
-	function To_xmlChar_const_ptr is new Ada.Unchecked_Conversion (
-		C.char_const_ptr,
-		C.libxml.xmlstring.xmlChar_ptr);
+	function To_void_ptr is
+		new Ada.Unchecked_Conversion (
+			C.libxml.xmlstring.xmlChar_ptr,
+			C.void_ptr);
+	function To_char_const_ptr is
+		new Ada.Unchecked_Conversion (
+			C.libxml.xmlstring.xmlChar_ptr,
+			C.char_const_ptr);
+	function To_unsigned_char_const_ptr is
+		new Ada.Unchecked_Conversion (
+			C.char_const_ptr,
+			C.unsigned_char_const_ptr);
+	function To_xmlChar_ptr is
+		new Ada.Unchecked_Conversion (
+			C.void_ptr,
+			C.libxml.xmlstring.xmlChar_ptr);
+	function To_xmlChar_const_ptr is
+		new Ada.Unchecked_Conversion (
+			C.char_const_ptr,
+			C.libxml.xmlstring.xmlChar_ptr);
 	MY_ENCODING : constant C.char_array := "ISO-8859-1" & C.char'Val (0);
 	-- ConvertInput:
 	-- @in: string in a given encoding
@@ -71,10 +76,9 @@ procedure test_writer is
 	function ConvertInput (A_in : C.char_array; encoding : C.char_array)
 		return C.libxml.xmlstring.xmlChar_ptr
 	is
-		pragma Assert (A_in'Length > 0
-			and then A_in (A_in'Last) = C.char'Val (0));
-		pragma Assert (encoding'Length > 0
-			and then encoding (encoding'Last) = C.char'Val (0));
+		pragma Assert (A_in'Length > 0 and then A_in (A_in'Last) = C.char'Val (0));
+		pragma Assert (
+			encoding'Length > 0 and then encoding (encoding'Last) = C.char'Val (0));
 		L_out : C.libxml.xmlstring.xmlChar_ptr;
 		ret : C.signed_int;
 		size : C.signed_int;
@@ -82,17 +86,16 @@ procedure test_writer is
 		temp : aliased C.signed_int;
 		handler : C.libxml.encoding.xmlCharEncodingHandlerPtr;
 	begin
-		handler := C.libxml.encoding.xmlFindCharEncodingHandler (
-			encoding (encoding'First)'Access);
+		handler :=
+			C.libxml.encoding.xmlFindCharEncodingHandler (
+				encoding (encoding'First)'Access);
 		if handler = null then
 			declare
 				encoding_String : String (1 .. encoding'Length - 1);
 				for encoding_String'Address use encoding'Address;
 			begin
 				raise Program_Error
-					with "ConvertInput: no encoding handler found for '"
-						& encoding_String
-						& "'";
+					with "ConvertInput: no encoding handler found for '" & encoding_String & "'";
 			end;
 		end if;
 		size := C.signed_int (C.string.strlen (A_in (A_in'First)'Access)) + 1;
@@ -100,30 +103,28 @@ procedure test_writer is
 		L_out := To_xmlChar_ptr (C.libxml.globals.xmlMalloc (C.size_t (out_size)));
 		if L_out /= null then
 			temp := size - 1;
-			ret := handler.input (
-				L_out,
-				out_size'Access,
-				To_unsigned_char_const_ptr (A_in (A_in'First)'Unchecked_Access),
-				temp'Access);
+			ret :=
+				handler.input (
+					L_out,
+					out_size'Access,
+					To_unsigned_char_const_ptr (A_in (A_in'First)'Unchecked_Access),
+					temp'Access);
 			if ret < 0 or else temp - size + 1 /= 0 then
 				C.libxml.globals.xmlFree (To_void_ptr (L_out));
 				L_out := null;
 				if ret < 0 then
-					 raise Program_Error
-					 	with "ConvertInput: conversion wasn't successful.";
+					raise Program_Error with "ConvertInput: conversion wasn't successful.";
 				else
-					 raise Program_Error
-					 	with "ConvertInput: conversion wasn't successful. converted:"
-					 		& C.signed_int'Image (temp)
-					 		& " octets.";
+					raise Program_Error
+						with "ConvertInput: conversion wasn't successful. converted:"
+							& C.signed_int'Image (temp) & " octets.";
 				end if;
 			else
-				L_out := To_xmlChar_ptr (C.libxml.globals.xmlRealloc (
-					To_void_ptr (L_out),
-					C.size_t (out_size) + 1));
+				L_out :=
+					To_xmlChar_ptr (
+						C.libxml.globals.xmlRealloc (To_void_ptr (L_out), C.size_t (out_size) + 1));
 				declare
-					out_Array : array (0 .. C.size_t (out_size)) of
-						C.libxml.xmlstring.xmlChar
+					out_Array : array (0 .. C.size_t (out_size)) of C.libxml.xmlstring.xmlChar
 						with Convention => C;
 					for out_Array'Address use System.Address (To_void_ptr (L_out));
 				begin
@@ -132,8 +133,7 @@ procedure test_writer is
 				end;
 			end if;
 		else
-			raise Program_Error
-				with "ConvertInput: no mem";
+			raise Program_Error with "ConvertInput: no mem";
 		end if;
 		return L_out;
 	end ConvertInput;
@@ -146,11 +146,11 @@ procedure test_writer is
 		-- Please observe, that the input to the xmlTextWriter functions
 		-- HAS to be in UTF-8, even if the output XML is encoded
 		-- in iso-8859-1
-		tmp := ConvertInput (
-			"This is a comment with special chars: <"
-				& C.char'Val (16#E4#) & C.char'Val (16#F6#) & C.char'Val (16#FC#)
-				& ">" & C.char'Val (0),
-			MY_ENCODING);
+		tmp :=
+			ConvertInput (
+				"This is a comment with special chars: <" & C.char'Val (16#E4#)
+					& C.char'Val (16#F6#) & C.char'Val (16#FC#) & ">" & C.char'Val (0),
+				MY_ENCODING);
 		rc := C.libxml.xmlwriter.xmlTextWriterWriteComment (writer, tmp);
 		if rc < 0 then
 			raise Program_Error
@@ -163,9 +163,10 @@ procedure test_writer is
 		declare
 			Name : constant C.char_array := "ORDER" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterStartElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterStartElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -176,10 +177,11 @@ procedure test_writer is
 			Name : constant C.char_array := "version" & C.char'Val (0);
 			Format : constant C.char_array := "1.0" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteAttribute (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteAttribute (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -190,36 +192,40 @@ procedure test_writer is
 			Name : constant C.char_array := "xml:lang" & C.char'Val (0);
 			Format : constant C.char_array := "de" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteAttribute (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteAttribute (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
 				with "testXmlwriterTree: Error at xmlTextWriterWriteAttribute";
 		end if;
-
 		-- Write a comment as child of ORDER
-		tmp := ConvertInput (
-			"<" & C.char'Val (16#E4#) & C.char'Val (16#F6#) & C.char'Val (16#FC#)
-				& ">" & C.char'Val (0),
-			MY_ENCODING);
+		tmp :=
+			ConvertInput (
+				"<" & C.char'Val (16#E4#) & C.char'Val (16#F6#) & C.char'Val (16#FC#) & ">"
+					& C.char'Val (0),
+				MY_ENCODING);
 		declare
 			Format : constant C.char_array :=
 				"This is another comment with special chars: " & C.char'Val (0);
 			Value : C.char_array (0 .. 255);
 			Dummy_char_ptr : C.char_ptr;
 		begin
-			Dummy_char_ptr := C.string.strcpy (
-				Value (Value'First)'Access,
-				Format (Format'First)'Access);
-			Dummy_char_ptr := C.string.strcat (
-				Value (Value'First)'Access,
-				To_char_const_ptr (tmp));
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteComment (
-				writer,
-				To_xmlChar_const_ptr (Value (Value'First)'Unchecked_Access));
+			Dummy_char_ptr :=
+				C.string.strcpy (
+					Value (Value'First)'Access,
+					Format (Format'First)'Access);
+			Dummy_char_ptr :=
+				C.string.strcat (
+					Value (Value'First)'Access,
+					To_char_const_ptr (tmp));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteComment (
+					writer,
+					To_xmlChar_const_ptr (Value (Value'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -232,9 +238,10 @@ procedure test_writer is
 		declare
 			Name : constant C.char_array := "HEADER" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterStartElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterStartElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -245,10 +252,11 @@ procedure test_writer is
 			Name : constant C.char_array := "X_ORDER_ID" & C.char'Val (0);
 			Format : constant C.char_array := "0000053535" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -259,26 +267,29 @@ procedure test_writer is
 			Name : constant C.char_array := "CUSTOMER_ID" & C.char'Val (0);
 			Format : constant C.char_array := "1010" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
 				with "testXmlwriterTree: Error at xmlTextWriterWriteFormatElement";
 		end if;
 		-- Write an element named "NAME_1" as child of HEADER.
-		tmp := ConvertInput (
-			"M" & C.char'Val (16#FC#) & "ller" & C.char'Val (0),
-			MY_ENCODING);
+		tmp :=
+			ConvertInput (
+				"M" & C.char'Val (16#FC#) & "ller" & C.char'Val (0),
+				MY_ENCODING);
 		declare
 			Name : constant C.char_array := "NAME_1" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				tmp);
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					tmp);
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -288,16 +299,18 @@ procedure test_writer is
 			C.libxml.globals.xmlFree (To_void_ptr (tmp));
 		end if;
 		-- Write an element named "NAME_2" as child of HEADER.
-		tmp := ConvertInput (
-			"J" & C.char'Val (16#F6#) & "rg" & C.char'Val (0),
-			MY_ENCODING);
+		tmp :=
+			ConvertInput (
+				"J" & C.char'Val (16#F6#) & "rg" & C.char'Val (0),
+				MY_ENCODING);
 		declare
 			Name : constant C.char_array := "NAME_2" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				tmp);
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					tmp);
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -309,16 +322,16 @@ procedure test_writer is
 		-- Close the element named HEADER.
 		rc := C.libxml.xmlwriter.xmlTextWriterEndElement (writer);
 		if rc < 0 then
-			raise Program_Error
-				with "testXmlwriterTree: Error at xmlTextWriterEndElement";
+			raise Program_Error with "testXmlwriterTree: Error at xmlTextWriterEndElement";
 		end if;
 		-- Start an element named "ENTRIES" as child of ORDER.
 		declare
 			Name : constant C.char_array := "ENTRIES" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterStartElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterStartElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -328,9 +341,10 @@ procedure test_writer is
 		declare
 			Name : constant C.char_array := "ENTRY" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterStartElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterStartElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -341,10 +355,11 @@ procedure test_writer is
 			Name : constant C.char_array := "ARTICLE" & C.char'Val (0);
 			Format : constant C.char_array := "<Test>" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -355,10 +370,11 @@ procedure test_writer is
 			Name : constant C.char_array := "ENTRY_NO" & C.char'Val (0);
 			Format : constant C.char_array := "10" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -367,16 +383,16 @@ procedure test_writer is
 		-- Close the element named ENTRY.
 		rc := C.libxml.xmlwriter.xmlTextWriterEndElement (writer);
 		if rc < 0 then
-			raise Program_Error
-				with "testXmlwriterTree: Error at xmlTextWriterEndElement";
+			raise Program_Error with "testXmlwriterTree: Error at xmlTextWriterEndElement";
 		end if;
 		-- Start an element named "ENTRY" as child of ENTRIES.
 		declare
 			Name : constant C.char_array := "ENTRY" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterStartElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterStartElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -387,10 +403,11 @@ procedure test_writer is
 			Name : constant C.char_array := "ARTICLE" & C.char'Val (0);
 			Format : constant C.char_array := "<Test 2>" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -401,10 +418,11 @@ procedure test_writer is
 			Name : constant C.char_array := "ENTRY_NO" & C.char'Val (0);
 			Format : constant C.char_array := "20" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -413,22 +431,21 @@ procedure test_writer is
 		-- Close the element named ENTRY.
 		rc := C.libxml.xmlwriter.xmlTextWriterEndElement (writer);
 		if rc < 0 then
-			raise Program_Error
-				with "testXmlwriterTree: Error at xmlTextWriterEndElement";
+			raise Program_Error with "testXmlwriterTree: Error at xmlTextWriterEndElement";
 		end if;
 		-- Close the element named ENTRIES.
 		rc := C.libxml.xmlwriter.xmlTextWriterEndElement (writer);
 		if rc < 0 then
-			raise Program_Error
-				with "testXmlwriterTree: Error at xmlTextWriterEndElement";
+			raise Program_Error with "testXmlwriterTree: Error at xmlTextWriterEndElement";
 		end if;
 		-- Start an element named "FOOTER" as child of ORDER.
 		declare
 			Name : constant C.char_array := "FOOTER" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterStartElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterStartElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -439,10 +456,11 @@ procedure test_writer is
 			Name : constant C.char_array := "TEXT" & C.char'Val (0);
 			Format : constant C.char_array := "This is a text." & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterWriteElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterWriteElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					To_xmlChar_const_ptr (Format (Format'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -451,8 +469,7 @@ procedure test_writer is
 		-- Close the element named FOOTER.
 		rc := C.libxml.xmlwriter.xmlTextWriterEndElement (writer);
 		if rc < 0 then
-			raise Program_Error
-				with "testXmlwriterTree: Error at xmlTextWriterEndElement";
+			raise Program_Error with "testXmlwriterTree: Error at xmlTextWriterEndElement";
 		end if;
 	end Write_Sample_XML;
 	-- testXmlwriterFilename:
@@ -465,9 +482,8 @@ procedure test_writer is
 		writer : C.libxml.xmlwriter.xmlTextWriterPtr;
 	begin
 		-- Create a new XmlWriter for uri, with no compression.
-		writer := C.libxml.xmlwriter.xmlNewTextWriterFilename (
-			uri (uri'First)'Access,
-			0);
+		writer :=
+			C.libxml.xmlwriter.xmlNewTextWriterFilename (uri (uri'First)'Access, 0);
 		if writer = null then
 			raise Program_Error
 				with "testXmlwriterFilename: Error creating the xml writer";
@@ -475,11 +491,12 @@ procedure test_writer is
 		-- Start the document with the xml default for the version,
 		-- encoding ISO 8859-1 and the default for the standalone
 		-- declaration.
-		rc := C.libxml.xmlwriter.xmlTextWriterStartDocument (
-			writer,
-			null,
-			MY_ENCODING (MY_ENCODING'First)'Access,
-			null);
+		rc :=
+			C.libxml.xmlwriter.xmlTextWriterStartDocument (
+				writer,
+				null,
+				MY_ENCODING (MY_ENCODING'First)'Access,
+				null);
 		if rc < 0 then
 			raise Program_Error
 				with "testXmlwriterTree: Error at xmlTextWriterStartDocument";
@@ -489,9 +506,10 @@ procedure test_writer is
 		declare
 			Name : constant C.char_array := "EXAMPLE" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterStartElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterStartElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -526,24 +544,23 @@ procedure test_writer is
 		-- Create a new XML buffer, to which the XML document will be written
 		buf := C.libxml.tree.xmlBufferCreate;
 		if buf = null then
-			raise Program_Error
-				with "testXmlwriterMemory: Error creating the xml buffer";
+			raise Program_Error with "testXmlwriterMemory: Error creating the xml buffer";
 		end if;
 		-- Create a new XmlWriter for memory, with no compression.
 		-- Remark: there is no compression for this kind of xmlTextWriter
 		writer := C.libxml.xmlwriter.xmlNewTextWriterMemory (buf, 0);
 		if writer = null then
-			raise Program_Error
-				with "testXmlwriterMemory: Error creating the xml writer";
+			raise Program_Error with "testXmlwriterMemory: Error creating the xml writer";
 		end if;
 		-- Start the document with the xml default for the version,
 		-- encoding ISO 8859-1 and the default for the standalone
 		-- declaration.
-		rc := C.libxml.xmlwriter.xmlTextWriterStartDocument (
-			writer,
-			null,
-			MY_ENCODING (MY_ENCODING'First)'Access,
-			null);
+		rc :=
+			C.libxml.xmlwriter.xmlTextWriterStartDocument (
+				writer,
+				null,
+				MY_ENCODING (MY_ENCODING'First)'Access,
+				null);
 		if rc < 0 then
 			raise Program_Error
 				with "testXmlwriterTree: Error at xmlTextWriterStartDocument";
@@ -553,9 +570,10 @@ procedure test_writer is
 		declare
 			Name : constant C.char_array := "EXAMPLE" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterStartElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterStartElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -580,8 +598,7 @@ procedure test_writer is
 			fp := C.stdio.fopen (file (file'First)'Access, Mode (Mode'First)'Access);
 		end;
 		if fp = null then
-			raise Program_Error
-				with "testXmlwriterMemory: Error at fopen";
+			raise Program_Error with "testXmlwriterMemory: Error at fopen";
 		end if;
 		Dummy_signed_int := C.stdio.fputs (To_char_const_ptr (buf.content), fp);
 		Dummy_signed_int := C.stdio.fclose (fp);
@@ -601,17 +618,17 @@ procedure test_writer is
 		-- Create a new XmlWriter for DOM, with no compression.
 		writer := C.libxml.xmlwriter.xmlNewTextWriterDoc (doc'Access, 0);
 		if writer = null then
-			raise Program_Error
-				with "testXmlwriterDoc: Error creating the xml writer";
+			raise Program_Error with "testXmlwriterDoc: Error creating the xml writer";
 		end if;
 		-- Start the document with the xml default for the version,
 		-- encoding ISO 8859-1 and the default for the standalone
 		-- declaration.
-		rc := C.libxml.xmlwriter.xmlTextWriterStartDocument (
-			writer,
-			null,
-			MY_ENCODING (MY_ENCODING'First)'Access,
-			null);
+		rc :=
+			C.libxml.xmlwriter.xmlTextWriterStartDocument (
+				writer,
+				null,
+				MY_ENCODING (MY_ENCODING'First)'Access,
+				null);
 		if rc < 0 then
 			raise Program_Error
 				with "testXmlwriterTree: Error at xmlTextWriterStartDocument";
@@ -621,9 +638,10 @@ procedure test_writer is
 		declare
 			Name : constant C.char_array := "EXAMPLE" & C.char'Val (0);
 		begin
-			rc := C.libxml.xmlwriter.xmlTextWriterStartElement (
-				writer,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
+			rc :=
+				C.libxml.xmlwriter.xmlTextWriterStartElement (
+					writer,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access));
 		end;
 		if rc < 0 then
 			raise Program_Error
@@ -642,10 +660,11 @@ procedure test_writer is
 				with "testXmlwriterTree: Error at xmlTextWriterEndDocument";
 		end if;
 		C.libxml.xmlwriter.xmlFreeTextWriter (writer);
-		Dummy_signed_int := C.libxml.tree.xmlSaveFileEnc (
-			file (file'First)'Access,
-			doc,
-			MY_ENCODING (MY_ENCODING'First)'Access);
+		Dummy_signed_int :=
+			C.libxml.tree.xmlSaveFileEnc (
+				file (file'First)'Access,
+				doc,
+				MY_ENCODING (MY_ENCODING'First)'Access);
 		C.libxml.tree.xmlFreeDoc (doc);
 	end testXmlwriterDoc;
 	-- testXmlwriterTree:
@@ -662,9 +681,11 @@ procedure test_writer is
 		Dummy_signed_int : C.signed_int;
 	begin
 		-- Create a new XML DOM tree, to which the XML document will be written
-		doc := C.libxml.tree.xmlNewDoc (
-			To_xmlChar_const_ptr (C.libxml.parser.XML_DEFAULT_VERSION (
-				C.libxml.parser.XML_DEFAULT_VERSION'First)'Access));
+		doc :=
+			C.libxml.tree.xmlNewDoc (
+				To_xmlChar_const_ptr (
+					C.libxml.parser.XML_DEFAULT_VERSION (
+						C.libxml.parser.XML_DEFAULT_VERSION'First)'Access));
 		if doc = null then
 			raise Program_Error
 				with "testXmlwriterTree: Error creating the xml document tree";
@@ -673,32 +694,32 @@ procedure test_writer is
 		declare
 			Name : constant C.char_array := "EXAMPLE" & C.char'Val (0);
 		begin
-			node := C.libxml.tree.xmlNewDocNode (
-				doc,
-				null,
-				To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
-				null);
+			node :=
+				C.libxml.tree.xmlNewDocNode (
+					doc,
+					null,
+					To_xmlChar_const_ptr (Name (Name'First)'Unchecked_Access),
+					null);
 		end;
 		if node = null then
-			raise Program_Error
-				with "testXmlwriterTree: Error creating the xml node";
+			raise Program_Error with "testXmlwriterTree: Error creating the xml node";
 		end if;
 		-- Make ELEMENT the root node of the tree
 		Dummy_xmlNodePtr := C.libxml.tree.xmlDocSetRootElement (doc, node);
 		-- Create a new XmlWriter for DOM tree, with no compression.
 		writer := C.libxml.xmlwriter.xmlNewTextWriterTree (doc, node, 0);
 		if writer = null then
-			raise Program_Error
-				with "testXmlwriterTree: Error creating the xml writer";
+			raise Program_Error with "testXmlwriterTree: Error creating the xml writer";
 		end if;
 		-- Start the document with the xml default for the version,
 		-- encoding ISO 8859-1 and the default for the standalone
 		-- declaration.
-		rc := C.libxml.xmlwriter.xmlTextWriterStartDocument (
-			writer,
-			null,
-			MY_ENCODING (MY_ENCODING'First)'Access,
-			null);
+		rc :=
+			C.libxml.xmlwriter.xmlTextWriterStartDocument (
+				writer,
+				null,
+				MY_ENCODING (MY_ENCODING'First)'Access,
+				null);
 		if rc < 0 then
 			raise Program_Error
 				with "testXmlwriterTree: Error at xmlTextWriterStartDocument";
@@ -716,10 +737,11 @@ procedure test_writer is
 				with "testXmlwriterTree: Error at xmlTextWriterEndDocument";
 		end if;
 		C.libxml.xmlwriter.xmlFreeTextWriter (writer);
-		Dummy_signed_int := C.libxml.tree.xmlSaveFileEnc (
-			file (file'First)'Access,
-			doc,
-			MY_ENCODING (MY_ENCODING'First)'Access);
+		Dummy_signed_int :=
+			C.libxml.tree.xmlSaveFileEnc (
+				file (file'First)'Access,
+				doc,
+				MY_ENCODING (MY_ENCODING'First)'Access);
 		C.libxml.tree.xmlFreeDoc (doc);
 	end testXmlwriterTree;
 begin

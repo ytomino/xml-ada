@@ -142,8 +142,8 @@ package XML is
 	type Parsing_Entry_Type is limited private;
 	pragma Preelaborable_Initialization (Parsing_Entry_Type);
 	
-	type Event_Reference_Type (Element : not null access constant Event) is
-		null record
+	type Event_Reference_Type (
+		Element : not null access constant Event) is null record
 		with Implicit_Dereference => Element;
 	
 	function Value (Parsing_Entry : Parsing_Entry_Type)
@@ -246,10 +246,11 @@ private
 		
 	private
 		
-		type Reader is new Ada.Finalization.Limited_Controlled with record
-			Data : aliased Non_Controlled_Reader :=
-				(Raw => null, State => Next, Version => null);
-		end record;
+		type Reader is new Ada.Finalization.Limited_Controlled
+			with record
+				Data : aliased Non_Controlled_Reader :=
+					(Raw => null, State => Next, Version => null);
+			end record;
 		
 		overriding procedure Finalize (Object : in out Reader);
 	
@@ -287,10 +288,11 @@ private
 		
 	private
 		
-		type Writer is new Ada.Finalization.Limited_Controlled with record
-			Data : aliased Non_Controlled_Writer :=
-				(Raw => null, Finished => False);
-		end record;
+		type Writer is new Ada.Finalization.Limited_Controlled
+			with record
+				Data : aliased Non_Controlled_Writer :=
+					(Raw => null, Finished => False);
+			end record;
 		
 		overriding procedure Finalize (Object : in out Writer);
 		

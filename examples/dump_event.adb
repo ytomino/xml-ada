@@ -100,12 +100,11 @@ procedure dump_event is
 	procedure Read_From_File (Name : in String) is
 		File : Ada.Streams.Stream_IO.File_Type;
 	begin
-		Ada.Streams.Stream_IO.Open (File, Ada.Streams.Stream_IO.In_File,
-			Name => Name);
+		Ada.Streams.Stream_IO.Open (File, Ada.Streams.Stream_IO.In_File, Name => Name);
 		declare
-			Reader : XML.Reader := XML.Streams.Create (
-				Ada.Streams.Stream_IO.Stream (File),
-				URI => "file://" & Name);
+			Reader : XML.Reader :=
+				XML.Streams.Create (Ada.Streams.Stream_IO.Stream (File),
+					URI => "file://" & Name);
 		begin
 			Dump_XML (Reader);
 		exception

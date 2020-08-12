@@ -25,16 +25,16 @@ package body XML is
 	procedure Free is new Ada.Unchecked_Deallocation (String, String_Access);
 	
 	procedure memcpy (dst, src : System.Address; n : C.size_t)
-		with Import,
-			Convention => Intrinsic, External_Name => "__builtin_memcpy";
+		with Import, Convention => Intrinsic, External_Name => "__builtin_memcpy";
 	
-	type xmlChar_array is array (C.size_t range <>) of
-		aliased C.libxml.xmlstring.xmlChar
+	type xmlChar_array is
+		array (C.size_t range <>) of aliased C.libxml.xmlstring.xmlChar
 		with Convention => C;
 	
-	function To_char_const_ptr is new Ada.Unchecked_Conversion (
-		C.libxml.xmlstring.xmlChar_const_ptr,
-		C.char_const_ptr);
+	function To_char_const_ptr is
+		new Ada.Unchecked_Conversion (
+			C.libxml.xmlstring.xmlChar_const_ptr,
+			C.char_const_ptr);
 	
 	function To_String (S : not null access constant C.char) return String is
 		Length : constant Natural := Natural (C.string.strlen (S));
@@ -165,34 +165,29 @@ package body XML is
 									C.libxml.xmlreader.XML_READER_TYPE_ATTRIBUTE) =>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (
-											NC_Object.Raw);
-									Name : String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
+										C.libxml.xmlreader.xmlTextReaderConstName (NC_Object.Raw);
+									Name : String (1 .. Natural (C.string.strlen (To_char_const_ptr (C_Name))));
 									for Name'Address use C_Name.all'Address;
 									C_Value : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstValue (
-											NC_Object.Raw);
-									Value : String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Value))));
+										C.libxml.xmlreader.xmlTextReaderConstValue (NC_Object.Raw);
+									Value : String (1 .. Natural (C.string.strlen (To_char_const_ptr (C_Value))));
 									for Value'Address use C_Value.all'Address;
 								begin
 									Parsed_Data.Event := (
 										Event_Type => Attribute,
-										Name => Copy_String_Access (
-											Name'Unrestricted_Access,
-											Parsed_Data.Name_Constraint'Access),
-										Value => Copy_String_Access (
-											Value'Unrestricted_Access,
-											Parsed_Data.Value_Constraint'Access));
+										Name =>
+											Copy_String_Access (
+												Name'Unrestricted_Access,
+												Parsed_Data.Name_Constraint'Access),
+										Value =>
+											Copy_String_Access (
+												Value'Unrestricted_Access,
+												Parsed_Data.Value_Constraint'Access));
 								end;
 								Clear_Last_Error;
 								declare
 									Moved : constant C.signed_int :=
-										C.libxml.xmlreader.xmlTextReaderMoveToNextAttribute (
-											NC_Object.Raw);
+										C.libxml.xmlreader.xmlTextReaderMoveToNextAttribute (NC_Object.Raw);
 								begin
 									if Moved < 0 then
 										Raise_Last_Error;
@@ -201,14 +196,10 @@ package body XML is
 									else
 										-- end of attributes
 										Clear_Last_Error;
-										if C.libxml.xmlreader.xmlTextReaderMoveToElement (
-											NC_Object.Raw) < 0
-										then
+										if C.libxml.xmlreader.xmlTextReaderMoveToElement (NC_Object.Raw) < 0 then
 											Raise_Last_Error;
 										end if;
-										if C.libxml.xmlreader.xmlTextReaderIsEmptyElement (
-											NC_Object.Raw) > 0
-										then
+										if C.libxml.xmlreader.xmlTextReaderIsEmptyElement (NC_Object.Raw) > 0 then
 											NC_Object.State := Empty_Element;
 										else -- move to children
 											NC_Object.State := Remaining;
@@ -219,22 +210,18 @@ package body XML is
 									C.libxml.xmlreader.XML_READER_TYPE_ELEMENT) =>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (
-											NC_Object.Raw);
-									Name : String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
+										C.libxml.xmlreader.xmlTextReaderConstName (NC_Object.Raw);
+									Name : String (1 .. Natural (C.string.strlen (To_char_const_ptr (C_Name))));
 									for Name'Address use C_Name.all'Address;
 								begin
 									Parsed_Data.Event := (
 										Event_Type => Element_Start,
-										Name => Copy_String_Access (
-											Name'Unrestricted_Access,
-											Parsed_Data.Name_Constraint'Access));
+										Name =>
+											Copy_String_Access (
+												Name'Unrestricted_Access,
+												Parsed_Data.Name_Constraint'Access));
 								end;
-								if C.libxml.xmlreader.xmlTextReaderHasAttributes (
-									NC_Object.Raw) > 0
-								then
+								if C.libxml.xmlreader.xmlTextReaderHasAttributes (NC_Object.Raw) > 0 then
 									NC_Object.State := Next;
 									Clear_Last_Error;
 									if C.libxml.xmlreader.xmlTextReaderMoveToFirstAttribute (
@@ -242,9 +229,7 @@ package body XML is
 									then
 										Raise_Last_Error;
 									end if;
-								elsif C.libxml.xmlreader.xmlTextReaderIsEmptyElement (
-									NC_Object.Raw) > 0
-								then
+								elsif C.libxml.xmlreader.xmlTextReaderIsEmptyElement (NC_Object.Raw) > 0 then
 									NC_Object.State := Empty_Element;
 								else -- move to children
 									NC_Object.State := Remaining;
@@ -261,42 +246,32 @@ package body XML is
 									C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE) =>
 								declare
 									C_Content : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstValue (
-											NC_Object.Raw);
-									Content : String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Content))));
+										C.libxml.xmlreader.xmlTextReaderConstValue (NC_Object.Raw);
+									Content :
+										String (1 .. Natural (C.string.strlen (To_char_const_ptr (C_Content))));
 									for Content'Address use C_Content.all'Address;
-									Content_Access : constant String_Access := Copy_String_Access (
-										Content'Unrestricted_Access,
-										Parsed_Data.Content_Constraint'Access);
+									Content_Access : constant String_Access :=
+										Copy_String_Access (
+											Content'Unrestricted_Access,
+											Parsed_Data.Content_Constraint'Access);
 								begin
 									case Node_Type is
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
 												C.libxml.xmlreader.XML_READER_TYPE_TEXT) =>
-											Parsed_Data.Event := (
-												Event_Type => Text,
-												Content => Content_Access);
+											Parsed_Data.Event := (Event_Type => Text, Content => Content_Access);
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
 												C.libxml.xmlreader.XML_READER_TYPE_CDATA) =>
-											Parsed_Data.Event := (
-												Event_Type => CDATA,
-												Content => Content_Access);
+											Parsed_Data.Event := (Event_Type => CDATA, Content => Content_Access);
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
 												C.libxml.xmlreader.XML_READER_TYPE_COMMENT) =>
-											Parsed_Data.Event := (
-												Event_Type => Comment,
-												Content => Content_Access);
+											Parsed_Data.Event := (Event_Type => Comment, Content => Content_Access);
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
 												C.libxml.xmlreader.XML_READER_TYPE_WHITESPACE) =>
-											Parsed_Data.Event := (
-												Event_Type => Whitespace,
-												Content => Content_Access);
+											Parsed_Data.Event := (Event_Type => Whitespace, Content => Content_Access);
 										when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
 												C.libxml.xmlreader.XML_READER_TYPE_SIGNIFICANT_WHITESPACE) =>
-											Parsed_Data.Event := (
-												Event_Type => Significant_Whitespace,
-												Content => Content_Access);
+											Parsed_Data.Event :=
+												(Event_Type => Significant_Whitespace, Content => Content_Access);
 										when others =>
 											pragma Assert (False);
 											null;
@@ -307,47 +282,41 @@ package body XML is
 									C.libxml.xmlreader.XML_READER_TYPE_PROCESSING_INSTRUCTION) =>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (
-											NC_Object.Raw);
-									Name : String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
+										C.libxml.xmlreader.xmlTextReaderConstName (NC_Object.Raw);
+									Name : String (1 .. Natural (C.string.strlen (To_char_const_ptr (C_Name))));
 									for Name'Address use C_Name.all'Address;
 								begin
 									Parsed_Data.Event := (
 										Event_Type => Processing_Instruction,
-										Name => Copy_String_Access (
-											Name'Unrestricted_Access,
-											Parsed_Data.Name_Constraint'Access));
+										Name =>
+											Copy_String_Access (
+												Name'Unrestricted_Access,
+												Parsed_Data.Name_Constraint'Access));
 									-- it's not able to get attributes info with libxml2 (?)
 									pragma Assert (
-										C.libxml.xmlreader.xmlTextReaderHasAttributes (
-											NC_Object.Raw) = 0);
+										C.libxml.xmlreader.xmlTextReaderHasAttributes (NC_Object.Raw) = 0);
 								end;
 								NC_Object.State := Remaining;
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
 									C.libxml.xmlreader.XML_READER_TYPE_DOCUMENT_TYPE) =>
 								declare
 									C_Name : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-										C.libxml.xmlreader.xmlTextReaderConstName (
-											NC_Object.Raw);
-									Name : String (
-										1 ..
-										Natural (C.string.strlen (To_char_const_ptr (C_Name))));
+										C.libxml.xmlreader.xmlTextReaderConstName (NC_Object.Raw);
+									Name : String (1 .. Natural (C.string.strlen (To_char_const_ptr (C_Name))));
 									for Name'Address use C_Name.all'Address;
 								begin
 									Parsed_Data.Event := (
 										Event_Type => Document_Type,
-										Name => Copy_String_Access (
-											Name'Unrestricted_Access,
-											Parsed_Data.Name_Constraint'Access),
+										Name =>
+											Copy_String_Access (
+												Name'Unrestricted_Access,
+												Parsed_Data.Name_Constraint'Access),
 										Public_Id => null,
 										System_Id => null,
 										Subset => null);
 									-- it's not able to get extra DTD info with libxml2 (?)
 									pragma Assert (
-										C.libxml.xmlreader.xmlTextReaderHasAttributes (
-											NC_Object.Raw) = 0);
+										C.libxml.xmlreader.xmlTextReaderHasAttributes (NC_Object.Raw) = 0);
 								end;
 								NC_Object.State := Remaining;
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
@@ -355,8 +324,7 @@ package body XML is
 								Parsed_Data.Event := (Event_Type => Element_End);
 								NC_Object.State := Remaining;
 							when others =>
-								raise Program_Error with
-									"in XML.Read, unimplemented" & Node_Type'Img;
+								raise Program_Error with "in XML.Read, unimplemented" & Node_Type'Img;
 						end case;
 					end if;
 				end;
@@ -400,8 +368,8 @@ package body XML is
 	begin
 		memcpy (C_Name'Address, Name'Address, Name_Length);
 		C_Name (Name_Length) := C.char'Val (0);
-		Result := C.libxml.encoding.xmlFindCharEncodingHandler (
-			C_Name (C_Name'First)'Access);
+		Result :=
+			C.libxml.encoding.xmlFindCharEncodingHandler (C_Name (C_Name'First)'Access);
 		if Result = null then
 			raise Name_Error;
 		end if;
@@ -449,13 +417,14 @@ package body XML is
 					NC_Result : Non_Controlled_Reader
 						renames Controlled_Readers.Reference (Result).all;
 				begin
-					NC_Result.Raw := C.libxml.xmlreader.xmlReaderForIO (
-						Read_Handler'Access,
-						null,
-						To_void_ptr (Input),
-						P_URI,
-						P_Encoding,
-						0);
+					NC_Result.Raw :=
+						C.libxml.xmlreader.xmlReaderForIO (
+							Read_Handler'Access,
+							null,
+							To_void_ptr (Input),
+							P_URI,
+							P_Encoding,
+							0);
 					if NC_Result.Raw = null then
 						raise Use_Error;
 					end if;
@@ -542,14 +511,12 @@ package body XML is
 		if NC_Object.Version = null then
 			declare
 				C_Version : constant C.libxml.xmlstring.xmlChar_const_ptr :=
-					C.libxml.xmlreader.xmlTextReaderConstXmlVersion (
-						NC_Object.Raw);
+					C.libxml.xmlreader.xmlTextReaderConstXmlVersion (NC_Object.Raw);
 			begin
 				if C_Version /= null then
 					declare
-						A_Version : String (
-							1 ..
-							Natural (C.string.strlen (To_char_const_ptr (C_Version))));
+						A_Version :
+							String (1 .. Natural (C.string.strlen (To_char_const_ptr (C_Version))));
 						for A_Version'Address use C_Version.all'Address;
 					begin
 						NC_Object.Version := new String'(A_Version);
@@ -567,8 +534,7 @@ package body XML is
 		return Encoding_Type (
 			C.libxml.encoding.xmlFindCharEncodingHandler (
 				To_char_const_ptr (
-					C.libxml.xmlreader.xmlTextReaderConstEncoding (
-						NC_Object.Raw))));
+					C.libxml.xmlreader.xmlTextReaderConstEncoding (NC_Object.Raw))));
 	end Encoding;
 	
 	function Standalone (Object : Reader) return Standalone_Type is
@@ -808,8 +774,7 @@ package body XML is
 					C_Content : xmlChar_array (0 .. Content_Length); -- NUL
 				begin
 					memcpy (C_Content'Address, Content'Address, Content_Length);
-					C_Content (Content_Length) :=
-						C.libxml.xmlstring.xmlChar'Val (0);
+					C_Content (Content_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteString (
 						NC_Object.Raw,
@@ -826,8 +791,7 @@ package body XML is
 					C_Content : xmlChar_array (0 .. Content_Length); -- NUL
 				begin
 					memcpy (C_Content'Address, Content'Address, Content_Length);
-					C_Content (Content_Length) :=
-						C.libxml.xmlstring.xmlChar'Val (0);
+					C_Content (Content_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteCDATA (
 						NC_Object.Raw,
@@ -850,8 +814,7 @@ package body XML is
 					C_Content : xmlChar_array (0 .. Content_Length); -- NUL
 				begin
 					memcpy (C_Content'Address, Content'Address, Content_Length);
-					C_Content (Content_Length) :=
-						C.libxml.xmlstring.xmlChar'Val (0);
+					C_Content (Content_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 					Clear_Last_Error;
 					if C.libxml.xmlwriter.xmlTextWriterWriteComment (
 						NC_Object.Raw,
@@ -895,30 +858,18 @@ package body XML is
 						memcpy (C_Name'Address, Name'Address, Name_Length);
 						C_Name (Name_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 						if Event.Public_Id /= null then
-							memcpy (
-								C_Public_Id'Address,
-								Event.Public_Id.all'Address,
-								Public_Id_Length);
-							C_Public_Id (Public_Id_Length) :=
-								C.libxml.xmlstring.xmlChar'Val (0);
+							memcpy (C_Public_Id'Address, Event.Public_Id.all'Address, Public_Id_Length);
+							C_Public_Id (Public_Id_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 							P_Public_Id := C_Public_Id (C_Public_Id'First)'Access;
 						end if;
 						if Event.System_Id /= null then
-							memcpy (
-								C_System_Id'Address,
-								Event.System_Id.all'Address,
-								System_Id_Length);
-							C_System_Id (System_Id_Length) :=
-								C.libxml.xmlstring.xmlChar'Val (0);
+							memcpy (C_System_Id'Address, Event.System_Id.all'Address, System_Id_Length);
+							C_System_Id (System_Id_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 							P_System_Id := C_System_Id (C_System_Id'First)'Access;
 						end if;
 						if Event.Subset /= null then
-							memcpy (
-								C_Subset'Address,
-								Event.Subset.all'Address,
-								Subset_Length);
-							C_Subset (Subset_Length) :=
-								C.libxml.xmlstring.xmlChar'Val (0);
+							memcpy (C_Subset'Address, Event.Subset.all'Address, Subset_Length);
+							C_Subset (Subset_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 							P_Subset := C_Subset (C_Subset'First)'Access;
 						end if;
 						Clear_Last_Error;
@@ -943,9 +894,7 @@ package body XML is
 				raise Program_Error; -- unimplemented
 			when Element_End =>
 				Clear_Last_Error;
-				if C.libxml.xmlwriter.xmlTextWriterEndElement (
-					NC_Object.Raw) < 0
-				then
+				if C.libxml.xmlwriter.xmlTextWriterEndElement (NC_Object.Raw) < 0 then
 					Raise_Last_Error;
 				end if;
 			when Entity_End =>
@@ -1013,8 +962,7 @@ package body XML is
 				NC_Object.Raw,
 				P_Version,
 				P_Encoding,
-				Standalone_Image (
-					C.signed_int'(Standalone_Type'Enum_Rep (Standalone)))) < 0
+				Standalone_Image (C.signed_int'(Standalone_Type'Enum_Rep (Standalone)))) < 0
 			then
 				Raise_Last_Error;
 			end if;

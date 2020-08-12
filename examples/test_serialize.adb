@@ -50,12 +50,10 @@ begin
 	declare
 		File : Ada.Streams.Stream_IO.File_Type;
 	begin
-		Ada.Streams.Stream_IO.Create (
-			File,
-			Name => Test_File_Name);
+		Ada.Streams.Stream_IO.Create (File, Name => Test_File_Name);
 		declare
-			W : aliased XML.Writer := XML.Streams.Create (
-				Ada.Streams.Stream_IO.Stream (File));
+			W : aliased XML.Writer :=
+				XML.Streams.Create (Ada.Streams.Stream_IO.Stream (File));
 		begin
 			Ada.Text_IO.Put ("Writing...");
 			IO (Serialization.XML.Writing (W'Access, Root_Tag).Serializer, Data);
@@ -71,13 +69,11 @@ begin
 			Y => False,
 			Z => (A => 0));
 	begin
-		Ada.Streams.Stream_IO.Open (
-			File,
-			Ada.Streams.Stream_IO.In_File,
+		Ada.Streams.Stream_IO.Open (File, Ada.Streams.Stream_IO.In_File,
 			Name => Test_File_Name);
 		declare
-			R : aliased XML.Reader := XML.Streams.Create (
-				Ada.Streams.Stream_IO.Stream (File));
+			R : aliased XML.Reader :=
+				XML.Streams.Create (Ada.Streams.Stream_IO.Stream (File));
 		begin
 			Ada.Text_IO.Put ("Reading...");
 			IO (Serialization.XML.Reading (R'Access, Root_Tag).Serializer, Data2);

@@ -3,8 +3,8 @@ private with Ada.Finalization;
 package Serialization.XML is
 	pragma Preelaborate;
 	
-	type Reference_Type (Serializer : not null access Serialization.Serializer) is
-		limited private;
+	type Reference_Type (
+		Serializer : not null access Serialization.Serializer) is limited private;
 	
 	function Reading (
 		Reader : not null access Standard.XML.Reader;
@@ -18,14 +18,15 @@ package Serialization.XML is
 	
 private
 	
-	type XML_Reader is limited new Serialization.Reader with record
-		Reader : not null access Standard.XML.Reader;
-		Next_Kind : Stream_Element_Kind;
-		Next_Name : Ada.Strings.Unbounded.String_Access;
-		Next_Value : Ada.Strings.Unbounded.String_Access;
-		Next_Next_Name : Ada.Strings.Unbounded.String_Access;
-		Level : Natural;
-	end record;
+	type XML_Reader is limited new Serialization.Reader
+		with record
+			Reader : not null access Standard.XML.Reader;
+			Next_Kind : Stream_Element_Kind;
+			Next_Name : Ada.Strings.Unbounded.String_Access;
+			Next_Value : Ada.Strings.Unbounded.String_Access;
+			Next_Next_Name : Ada.Strings.Unbounded.String_Access;
+			Level : Natural;
+		end record;
 	
 	overriding function Next_Kind (Object : not null access XML_Reader)
 		return Stream_Element_Kind;
@@ -37,10 +38,11 @@ private
 		Object : not null access XML_Reader;
 		Position : in State);
 	
-	type XML_Writer is limited new Serialization.Writer with record
-		Writer : not null access Standard.XML.Writer;
-		Level : Natural;
-	end record;
+	type XML_Writer is limited new Serialization.Writer
+		with record
+			Writer : not null access Standard.XML.Writer;
+			Level : Natural;
+		end record;
 	
 	overriding procedure Put (
 		Object : not null access XML_Writer;
@@ -61,13 +63,14 @@ private
 	type XML_Reader_Access is access XML_Reader;
 	type XML_Writer_Access is access XML_Writer;
 	
-	type Reference_Type (Serializer : not null access Serializer) is
-		limited new Ada.Finalization.Limited_Controlled with
-	record
-		Serializer_Body : Serializer_Access;
-		Reader_Body : XML_Reader_Access;
-		Writer_Body : XML_Writer_Access;
-	end record;
+	type Reference_Type (
+		Serializer : not null access Serializer) is
+		limited new Ada.Finalization.Limited_Controlled
+		with record
+			Serializer_Body : Serializer_Access;
+			Reader_Body : XML_Reader_Access;
+			Writer_Body : XML_Writer_Access;
+		end record;
 	
 	overriding procedure Finalize (Object : in out Reference_Type);
 	

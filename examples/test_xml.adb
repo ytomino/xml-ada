@@ -59,37 +59,44 @@ procedure test_xml is
 		end if;
 	end "=";
 	Test_File_Name : constant String := "test_xml.xml";
-	Data : constant array (Positive range <>) of
-		not null access constant XML.Event := (
+	type Event_Constant is access constant XML.Event;
+	The_Name_1 : aliased constant String := "root";
+	The_Content_1 : aliased constant String := "Hello,";
+	The_Name_2 : aliased constant String := "sub";
+	The_Name_3 : aliased constant String := "attr";
+	The_Value_1 : aliased constant String := "<>&" & Latin_1.HT & Latin_1.LF;
+	The_Content_2 : aliased constant String := "XML!";
+	The_Content_3 : aliased constant String := " comment ";
+	Data : constant array (Positive range <>) of not null Event_Constant := (
 		new XML.Event'(
 			Event_Type => XML.Document_Type,
-			Name => new String'("root"),
+			Name => The_Name_1'Unchecked_Access,
 			Public_Id => null,
 			System_Id => null,
 			Subset => null),
 		new XML.Event'(
 			Event_Type => XML.Element_Start,
-			Name => new String'("root")),
+			Name => The_Name_1'Unchecked_Access),
 		new XML.Event'(
 			Event_Type => XML.Text,
-			Content => new String'("Hello,")),
+			Content => The_Content_1'Unchecked_Access),
 		new XML.Event'(
 			Event_Type => XML.Element_Start,
-			Name => new String'("sub")),
+			Name => The_Name_2'Unchecked_Access),
 		new XML.Event'(
 			Event_Type => XML.Attribute,
-			Name => new String'("attr"),
-			Value => new String'("<>&" & Latin_1.HT & Latin_1.LF)),
+			Name => The_Name_3'Unchecked_Access,
+			Value => The_Value_1'Unchecked_Access),
 		new XML.Event'(
 			Event_Type => XML.Element_End),
 		new XML.Event'(
 			Event_Type => XML.Text,
-			Content => new String'("XML!")),
+			Content => The_Content_2'Unchecked_Access),
 		new XML.Event'(
 			Event_Type => XML.Element_End),
 		new XML.Event'(
 			Event_Type => XML.Comment,
-			Content => new String'(" comment ")));
+			Content => The_Content_3'Unchecked_Access));
 	Version_1_0 : aliased constant String := "1.0";
 	UTF_8 : constant XML.Encoding_Type := XML.Find ("utf-8");
 begin

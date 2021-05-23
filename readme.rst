@@ -6,10 +6,12 @@ What's this?
 
 Ada binding to libxml2.
 
-Depending tools and libraries
------------------------------
+Prerequisites
+-------------
 
-libxml2
+GCC >= 5
+ https://gcc.gnu.org/
+libxml2 >= 2.7
  http://xmlsoft.org/
 headmaster
  http://github.com/ytomino/headmaster

@@ -21,11 +21,11 @@ yaml-ada (if you use serialization)
 Usage
 -----
 
-1. Translate C headers with headmaster. ::
+1. Translate the C headers with headmaster. ::
    
     $ headmaster --to ada -p -D import-dir xml-ada/source/import.h
 
-2. Add source directories of xml-ada and translated headers
+2. Add the source directories of xml-ada and the translated headers
    to search path for gnatmake. ::
    
     $ gnatmake -Ixml-ada/source -Iimport-dir your_main.adb

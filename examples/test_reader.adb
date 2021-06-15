@@ -65,6 +65,8 @@
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with C.stdio;
+with C.stdlib;
+with C.string;
 with C.libxml.xmlreader;
 with C.libxml.parser;
 with C.libxml.xmlmemory;
@@ -78,6 +80,7 @@ with C.libxml.xmlversion;
 --	"Reader, Pattern or output support not compiled in");
 procedure test_reader is
 	pragma Linker_Options ("-lxml2");
+	use type C.char;
 	use type C.char_array;
 	use type C.signed_int;
 	use type C.size_t;
@@ -465,20 +468,57 @@ begin
 	-- between the version it was compiled for and the actual shared
 	-- library used.
 	C.libxml.xmlversion.xmlCheckVersion (C.libxml.xmlversion.LIBXML_VERSION);
-	Tests : begin
-		reader1 (
-			"test2.xml" & C.char'Val (0),
-			"reader1.tmp" & C.char'Val (0));
-		reader2 (
-			"test2.xml" & C.char'Val (0),
-			"reader2.tmp" & C.char'Val (0));
-		reader3 (
-			"reader3.tmp" & C.char'Val (0));
-		reader4 (
-			"test1.xml" & C.char'Val (0),
-			"test2.xml" & C.char'Val (0),
-			"test3.xml" & C.char'Val (0),
-			"reader4.tmp" & C.char'Val (0));
+	Tests : declare
+		Default_Temp : constant C.char_array (0 .. 4) := "/tmp" & C.char'Val (0);
+		function Get_Temp return access constant C.char is
+			TMPDIR : constant C.char_array (0 .. 6) := "TMPDIR" & C.char'Val (0);
+			Temp : access constant C.char := C.stdlib.getenv (TMPDIR (0)'Access);
+		begin
+			if Temp = null or else Temp.all = C.char'Val (0) then
+				Temp := Default_Temp (0)'Access;
+			end if;
+			return Temp;
+		end Get_Temp;
+		Temp : constant not null access constant C.char := Get_Temp;
+		Dummy_char_ptr : C.char_ptr;
+	begin
+		declare
+			argv1 : constant C.char_array := "test2.xml" & C.char'Val (0);
+			output_Name : constant C.char_array := "/reader1.tmp" & C.char'Val (0);
+			output : aliased C.char_array (0 .. C.string.strlen (Temp) + 256);
+		begin
+			Dummy_char_ptr := C.string.strcpy (output (0)'Access, Temp);
+			Dummy_char_ptr := C.string.strcat (output (0)'Access, output_Name (0)'Access);
+			reader1 (argv1, output);
+		end;
+		declare
+			argv1 : constant C.char_array := "test2.xml" & C.char'Val (0);
+			output_Name : constant C.char_array := "/reader2.tmp" & C.char'Val (0);
+			output : aliased C.char_array (0 .. C.string.strlen (Temp) + 256);
+		begin
+			Dummy_char_ptr := C.string.strcpy (output (0)'Access, Temp);
+			Dummy_char_ptr := C.string.strcat (output (0)'Access, output_Name (0)'Access);
+			reader2 (argv1, output);
+		end;
+		declare
+			output_Name : constant C.char_array := "/reader3.tmp" & C.char'Val (0);
+			output : aliased C.char_array (0 .. C.string.strlen (Temp) + 256);
+		begin
+			Dummy_char_ptr := C.string.strcpy (output (0)'Access, Temp);
+			Dummy_char_ptr := C.string.strcat (output (0)'Access, output_Name (0)'Access);
+			reader3 (output);
+		end;
+		declare
+			argv1 : constant C.char_array := "test1.xml" & C.char'Val (0);
+			argv2 : constant C.char_array := "test2.xml" & C.char'Val (0);
+			argv3 : constant C.char_array := "test3.xml" & C.char'Val (0);
+			output_Name : constant C.char_array := "/reader4.tmp" & C.char'Val (0);
+			output : aliased C.char_array (0 .. C.string.strlen (Temp) + 256);
+		begin
+			Dummy_char_ptr := C.string.strcpy (output (0)'Access, Temp);
+			Dummy_char_ptr := C.string.strcat (output (0)'Access, output_Name (0)'Access);
+			reader4 (argv1, argv2, argv3, output);
+		end;
 	end Tests;
 	-- Cleanup function for the XML library.
 	C.libxml.parser.xmlCleanupParser;

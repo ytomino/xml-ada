@@ -21,6 +21,7 @@ with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with System;
 with C.stdio;
+with C.stdlib;
 with C.string;
 with C.libxml.encoding;
 with C.libxml.xmlwriter;
@@ -477,14 +478,12 @@ procedure test_writer is
 	-- @uri: the output URI
 	--
 	-- test the xmlWriter interface when writing to a new file
-	procedure testXmlwriterFilename (uri : in C.char_array) is
-		pragma Assert (uri (uri'Last) = C.char'Val (0));
+	procedure testXmlwriterFilename (uri : not null access constant C.char) is
 		rc : C.signed_int;
 		writer : C.libxml.xmlwriter.xmlTextWriterPtr;
 	begin
 		-- Create a new XmlWriter for uri, with no compression.
-		writer :=
-			C.libxml.xmlwriter.xmlNewTextWriterFilename (uri (uri'First)'Access, 0);
+		writer := C.libxml.xmlwriter.xmlNewTextWriterFilename (uri, 0);
 		if writer = null then
 			raise Program_Error
 				with "testXmlwriterFilename: Error creating the xml writer";
@@ -534,8 +533,7 @@ procedure test_writer is
 	-- @file: the output file
 	--
 	-- test the xmlWriter interface when writing to memory
-	procedure testXmlwriterMemory (file : in C.char_array) is
-		pragma Assert (file (file'Last) = C.char'Val (0));
+	procedure testXmlwriterMemory (file : not null access constant C.char) is
 		rc : C.signed_int;
 		writer : C.libxml.xmlwriter.xmlTextWriterPtr;
 		buf : C.libxml.tree.xmlBufferPtr;
@@ -596,7 +594,7 @@ procedure test_writer is
 		declare
 			Mode : constant C.char_array := "w" & C.char'Val (0);
 		begin
-			fp := C.stdio.fopen (file (file'First)'Access, Mode (Mode'First)'Access);
+			fp := C.stdio.fopen (file, Mode (Mode'First)'Access);
 		end;
 		if fp = null then
 			raise Program_Error with "testXmlwriterMemory: Error at fopen";
@@ -609,8 +607,7 @@ procedure test_writer is
 	-- @file: the output file
 	--
 	-- test the xmlWriter interface when creating a new document
-	procedure testXmlwriterDoc (file : in C.char_array) is
-		pragma Assert (file (file'Last) = C.char'Val (0));
+	procedure testXmlwriterDoc (file : not null access constant C.char) is
 		rc : C.signed_int;
 		writer : C.libxml.xmlwriter.xmlTextWriterPtr;
 		doc : aliased C.libxml.tree.xmlDocPtr;
@@ -663,7 +660,7 @@ procedure test_writer is
 		C.libxml.xmlwriter.xmlFreeTextWriter (writer);
 		Dummy_signed_int :=
 			C.libxml.tree.xmlSaveFileEnc (
-				file (file'First)'Access,
+				file,
 				doc,
 				MY_ENCODING (MY_ENCODING'First)'Access);
 		C.libxml.tree.xmlFreeDoc (doc);
@@ -672,8 +669,7 @@ procedure test_writer is
 	-- @file: the output file
 	--
 	-- test the xmlWriter interface when writing to a subtree
-	procedure testXmlwriterTree (file : in C.char_array) is
-		pragma Assert (file (file'Last) = C.char'Val (0));
+	procedure testXmlwriterTree (file : not null access constant C.char) is
 		rc : C.signed_int;
 		writer : C.libxml.xmlwriter.xmlTextWriterPtr;
 		doc : C.libxml.tree.xmlDocPtr;
@@ -740,7 +736,7 @@ procedure test_writer is
 		C.libxml.xmlwriter.xmlFreeTextWriter (writer);
 		Dummy_signed_int :=
 			C.libxml.tree.xmlSaveFileEnc (
-				file (file'First)'Access,
+				file,
 				doc,
 				MY_ENCODING (MY_ENCODING'First)'Access);
 		C.libxml.tree.xmlFreeDoc (doc);
@@ -750,14 +746,57 @@ begin
 	-- between the version it was compiled for and the actual shared
 	-- library used.
 	C.libxml.xmlversion.xmlCheckVersion (C.libxml.xmlversion.LIBXML_VERSION);
-	-- first, the file version
-	testXmlwriterFilename ("writer1.res" & C.char'Val (0));
-	-- next, the memory version
-	testXmlwriterMemory ("writer2.res" & C.char'Val (0));
-	-- next, the DOM version
-	testXmlwriterDoc ("writer3.res" & C.char'Val (0));
-	-- next, the tree version
-	testXmlwriterTree ("writer4.res" & C.char'Val (0));
+	declare
+		Default_Temp : constant C.char_array (0 .. 4) := "/tmp" & C.char'Val (0);
+		function Get_Temp return access constant C.char is
+			TMPDIR : constant C.char_array (0 .. 6) := "TMPDIR" & C.char'Val (0);
+			Temp : access constant C.char := C.stdlib.getenv (TMPDIR (0)'Access);
+		begin
+			if Temp = null or else Temp.all = C.char'Val (0) then
+				Temp := Default_Temp (0)'Access;
+			end if;
+			return Temp;
+		end Get_Temp;
+		Temp : constant not null access constant C.char := Get_Temp;
+		Dummy_char_ptr : C.char_ptr;
+	begin
+		-- first, the file version
+		declare
+			uri_Name : constant C.char_array := "/writer1.res" & C.char'Val (0);
+			uri : aliased C.char_array (0 .. C.string.strlen (Temp) + 256);
+		begin
+			Dummy_char_ptr := C.string.strcpy (uri (0)'Access, Temp);
+			Dummy_char_ptr := C.string.strcat (uri (0)'Access, uri_Name (0)'Access);
+			testXmlwriterFilename (uri => uri (0)'Access);
+		end;
+		-- next, the memory version
+		declare
+			file_Name : constant C.char_array := "/writer2.res" & C.char'Val (0);
+			file : aliased C.char_array (0 .. C.string.strlen (Temp) + 256);
+		begin
+			Dummy_char_ptr := C.string.strcpy (file (0)'Access, Temp);
+			Dummy_char_ptr := C.string.strcat (file (0)'Access, file_Name (0)'Access);
+			testXmlwriterMemory (file => file (0)'Access);
+		end;
+		-- next, the DOM version
+		declare
+			file_Name : constant C.char_array := "/writer3.res" & C.char'Val (0);
+			file : aliased C.char_array (0 .. C.string.strlen (Temp) + 256);
+		begin
+			Dummy_char_ptr := C.string.strcpy (file (0)'Access, Temp);
+			Dummy_char_ptr := C.string.strcat (file (0)'Access, file_Name (0)'Access);
+			testXmlwriterDoc (file => file (0)'Access);
+		end;
+		-- next, the tree version
+		declare
+			file_Name : constant C.char_array := "/writer4.res" & C.char'Val (0);
+			file : aliased C.char_array (0 .. C.string.strlen (Temp) + 256);
+		begin
+			Dummy_char_ptr := C.string.strcpy (file (0)'Access, Temp);
+			Dummy_char_ptr := C.string.strcat (file (0)'Access, file_Name (0)'Access);
+			testXmlwriterTree (file => file (0)'Access);
+		end;
+	end;
 	-- Cleanup function for the XML library.
 	C.libxml.parser.xmlCleanupParser;
 	-- this is to debug memory for regression tests

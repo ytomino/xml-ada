@@ -21,16 +21,37 @@ yaml-ada (if you use serialization)
 Usage
 -----
 
-1. Translate the C headers with headmaster. ::
-   
-    $ headmaster --to ada -p -D import-dir xml-ada/source/import.h
+1. Prepare the translated headers.
+
+   A. Translate the C headers with headmaster. ::
+
+       $ headmaster --to ada -p -D import-dir xml-ada/source/import.h
+      
+      However, it may not work well in your environment.
+      The plan B is recommended.
+
+   B. Download them from `pre-translated headers page`_.
 
 2. Add the source directories of xml-ada and the translated headers
    to search path for gnatmake. ::
-   
+
     $ gnatmake -Ixml-ada/source -Iimport-dir your_main.adb
    
    Or please write .gpr file for your environment.
+
+Build examples
+--------------
+
+1. Link the translated headers to `examples/import`. ::
+
+    $ mkdir -p examples/import/$(gcc -dumpmachine)
+    $ ln -s import-dir examples/import/$(gcc -dumpmachine)
+   
+   If this step is omitted, headmaster will be used.
+
+2. Build them. ::
+
+    $ make -C examples
 
 License
 -------
@@ -112,3 +133,5 @@ I recommend the MIT License that is same as libxml2.
  Except as contained in this notice, the name of Daniel Veillard shall not
  be used in advertising or otherwise to promote the sale, use or other deal-
  ings in this Software without prior written authorization from him.
+
+.. _`pre-translated headers page`: https://github.com/ytomino/xml-ada/wiki/Pre-translated-headers

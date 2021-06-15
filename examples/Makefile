@@ -86,8 +86,22 @@ $(filter-out test_%,$(EXAMPLES)): %: $(BUILDDIR)/% $(BINLN)
 
 check: all $(TESTS)
 
-$(TESTS): %: $(BUILDDIR)/%
+$(filter-out test_reader test_writer,$(TESTS)): %: $(BUILDDIR)/%
 	$<
+
+test_reader: $(BUILDDIR)/test_reader
+	$<
+	diff reader1.res $(TMPDIR)/reader1.tmp
+	diff reader1.res $(TMPDIR)/reader2.tmp
+	diff reader3.res $(TMPDIR)/reader3.tmp
+	diff reader4.res $(TMPDIR)/reader4.tmp
+
+test_writer: $(BUILDDIR)/test_writer
+	$<
+	diff writer.xml $(TMPDIR)/writer1.res
+	diff writer.xml $(TMPDIR)/writer2.res
+	diff writer.xml $(TMPDIR)/writer3.res
+	diff writer.xml $(TMPDIR)/writer4.res
 
 ifeq ($(IMPORTDIR),$(BUILDDIR)/import)
 $(IMPORTDIR): $(SOURCEDIR)/import.h

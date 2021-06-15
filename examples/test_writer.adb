@@ -17,6 +17,7 @@
 -- Ada version by yt
 -- This file is encoded as Latin-1
 --
+with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with System;
 with C.stdio;
@@ -761,4 +762,6 @@ begin
 	C.libxml.parser.xmlCleanupParser;
 	-- this is to debug memory for regression tests
 	C.libxml.xmlmemory.xmlMemoryDump;
+	-- finish
+	Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error.all, "ok");
 end test_writer;

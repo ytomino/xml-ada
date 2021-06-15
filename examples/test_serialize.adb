@@ -1,9 +1,23 @@
+with Ada.Command_Line;
 with Ada.Streams.Stream_IO;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with Serialization.XML;
 with XML.Streams;
 procedure test_serialize is
+	Verbose : Boolean := False;
+	procedure Put (Item : in String) is
+	begin
+		if Verbose then
+			Ada.Text_IO.Put (Item);
+		end if;
+	end Put;
+	procedure New_Line is
+	begin
+		if Verbose then
+			Ada.Text_IO.New_Line;
+		end if;
+	end New_Line;
 	Test_File_Name : constant String := "test_serialize.xml";
 	type Nested_Map is record
 		A : Integer;
@@ -41,8 +55,23 @@ procedure test_serialize is
 		Y => True,
 		Z => (A => 100));
 begin
+	-- options
+	for I in 1 .. Ada.Command_Line.Argument_Count loop
+		declare
+			A : constant String := Ada.Command_Line.Argument (I);
+		begin
+			if A = "--verbose" then
+				Verbose := True;
+			else
+				Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error.all, "unknown option: " & A);
+				Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+				return;
+			end if;
+		end;
+	end loop;
+	-- writer
 	declare
-		W : aliased XML.Writer := XML.Create (Ada.Text_IO.Put'Access);
+		W : aliased XML.Writer := XML.Create (Put'Access);
 	begin
 		IO (Serialization.XML.Writing (W'Access, Root_Tag).Serializer, Data);
 		XML.Flush (W);
@@ -55,13 +84,15 @@ begin
 			W : aliased XML.Writer :=
 				XML.Streams.Create (Ada.Streams.Stream_IO.Stream (File));
 		begin
-			Ada.Text_IO.Put ("Writing...");
+			Put ("Writing...");
 			IO (Serialization.XML.Writing (W'Access, Root_Tag).Serializer, Data);
 			XML.Flush (W);
-			Ada.Text_IO.Put_Line (" ok");
+			Put (" ok");
+			New_Line;
 		end;
 		Ada.Streams.Stream_IO.Close (File);
 	end;
+	-- reader
 	declare
 		File : Ada.Streams.Stream_IO.File_Type;
 		Data2 : T := (
@@ -75,13 +106,14 @@ begin
 			R : aliased XML.Reader :=
 				XML.Streams.Create (Ada.Streams.Stream_IO.Stream (File));
 		begin
-			Ada.Text_IO.Put ("Reading...");
+			Put ("Reading...");
 			IO (Serialization.XML.Reading (R'Access, Root_Tag).Serializer, Data2);
-			Ada.Text_IO.Put_Line (" ok");
+			Put (" ok");
+			New_Line;
 		end;
 		Ada.Streams.Stream_IO.Close (File);
 		declare
-			W : aliased XML.Writer := XML.Create (Ada.Text_IO.Put'Access);
+			W : aliased XML.Writer := XML.Create (Put'Access);
 		begin
 			IO (Serialization.XML.Writing (W'Access, Root_Tag).Serializer, Data2);
 			XML.Flush (W);
@@ -90,4 +122,6 @@ begin
 			raise Program_Error;
 		end if;
 	end;
+	-- finish
+	Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error.all, "ok");
 end test_serialize;

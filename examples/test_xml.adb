@@ -1,8 +1,22 @@
 with Ada.Characters.Latin_1;
+with Ada.Command_Line;
 with Ada.Streams.Stream_IO;
 with Ada.Text_IO;
 with XML.Streams;
 procedure test_xml is
+	Verbose : Boolean := False;
+	procedure Put (Item : in String) is
+	begin
+		if Verbose then
+			Ada.Text_IO.Put (Item);
+		end if;
+	end Put;
+	procedure New_Line is
+	begin
+		if Verbose then
+			Ada.Text_IO.New_Line;
+		end if;
+	end New_Line;
 	use type XML.Encoding_Type;
 	use type XML.Event_Type;
 	use type XML.Standalone_Type;
@@ -101,13 +115,23 @@ procedure test_xml is
 	Version_1_0 : aliased constant String := "1.0";
 	UTF_8 : constant XML.Encoding_Type := XML.Find ("utf-8");
 begin
+	-- options
+	for I in 1 .. Ada.Command_Line.Argument_Count loop
+		declare
+			A : constant String := Ada.Command_Line.Argument (I);
+		begin
+			if A = "--verbose" then
+				Verbose := True;
+			else
+				Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error.all, "unknown option: " & A);
+				Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+				return;
+			end if;
+		end;
+	end loop;
+	-- writer
 	declare
-		W : XML.Writer :=
-			XML.Create (
-				Ada.Text_IO.Put'Access,
-				UTF_8,
-				Version_1_0'Access,
-				XML.Yes);
+		W : XML.Writer := XML.Create (Put'Access, UTF_8, Version_1_0'Access, XML.Yes);
 	begin
 		XML.Set_Indent (W, (1 => Latin_1.HT));
 		for I in Data'Range loop
@@ -127,16 +151,18 @@ begin
 					Version_1_0'Access,
 					XML.Yes);
 		begin
-			Ada.Text_IO.Put ("Writing...");
+			Put ("Writing...");
 			for I in Data'Range loop
-				Ada.Text_IO.Put (I'Img);
+				Put (I'Img);
 				XML.Write (W, Data (I).all);
 			end loop;
 			XML.Flush (W);
-			Ada.Text_IO.Put_Line (" ok");
+			Put (" ok");
+			New_Line;
 		end;
 		Ada.Streams.Stream_IO.Close (File);
 	end;
+	-- reader
 	declare
 		File : Ada.Streams.Stream_IO.File_Type;
 	begin
@@ -155,9 +181,9 @@ begin
 			if XML.Standalone (R) /= XML.Yes then
 				raise Program_Error;
 			end if;
-			Ada.Text_IO.Put ("Reading...");
+			Put ("Reading...");
 			for I in Data'Range loop
-				Ada.Text_IO.Put (I'Img);
+				Put (I'Img);
 				declare
 					procedure Process (Event : in XML.Event) is
 					begin
@@ -169,8 +195,11 @@ begin
 					XML.Read (R, Process'Access);
 				end;
 			end loop;
-			Ada.Text_IO.Put_Line (" ok");
+			Put (" ok");
+			New_Line;
 		end;
 		Ada.Streams.Stream_IO.Close (File);
 	end;
+	-- finish
+	Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error.all, "ok");
 end test_xml;

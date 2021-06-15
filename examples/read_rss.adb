@@ -3,7 +3,7 @@ with Ada.Command_Line;
 with Ada.Streams.Stream_IO;
 with Ada.Text_IO;
 with XML.Streams;
-procedure test_rss is
+procedure read_rss is
 	package Latin_1 renames Ada.Characters.Latin_1;
 	procedure Read_RSS (Reader : in out XML.Reader) is
 		type RSS_Version_Type is (RSS_1, RSS_2);
@@ -336,4 +336,4 @@ begin
 			Read_RSS_From_File (Ada.Command_Line.Argument (I));
 		end loop;
 	end if;
-end test_rss;
+end read_rss;

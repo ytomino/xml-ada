@@ -1,5 +1,7 @@
 with Ada.Characters.Latin_1;
 with Ada.Command_Line;
+with Ada.Directories;
+with Ada.Environment_Variables;
 with Ada.Streams.Stream_IO;
 with Ada.Text_IO;
 with XML.Streams;
@@ -73,7 +75,10 @@ procedure test_xml is
 			end case;
 		end if;
 	end "=";
-	Test_File_Name : constant String := "test_xml.xml";
+	Test_File_Name : constant String :=
+		Ada.Directories.Compose (
+			Ada.Environment_Variables.Value ("TMPDIR", Default => "/tmp"),
+			"test_xml.xml");
 	type Event_Constant is access constant XML.Event;
 	The_Name_1 : aliased constant String := "root";
 	The_Content_1 : aliased constant String := "Hello,";

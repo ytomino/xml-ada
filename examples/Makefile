@@ -97,6 +97,3 @@ endif
 
 clean:
 	-rm -rf *.noindex bin
-	-rm reader1.tmp reader2.tmp reader3.tmp reader4.tmp
-	-rm writer1.res writer2.res writer3.res writer4.res
-	-rm test_xml.xml

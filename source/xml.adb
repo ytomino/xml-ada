@@ -129,11 +129,10 @@ package body XML is
 	-- for standalone
 	No_Image : constant C.char_array := "no" & C.char'Val (0);
 	Yes_Image : constant C.char_array := "yes" & C.char'Val (0);
-	Standalone_Image : constant
-			array (C.signed_int range -1 .. 1) of C.char_const_ptr := (
-		Standalone_Type'Enum_Rep (No_Specific) => null,
-		Standalone_Type'Enum_Rep (No) => No_Image (No_Image'First)'Access,
-		Standalone_Type'Enum_Rep (Yes) => Yes_Image (Yes_Image'First)'Access);
+	Standalone_Image : constant array (Standalone_Type) of C.char_const_ptr := (
+		No_Specific => null,
+		No => No_Image (No_Image'First)'Access,
+		Yes => Yes_Image (Yes_Image'First)'Access);
 	
 	-- reading one event
 	
@@ -962,7 +961,7 @@ package body XML is
 				NC_Object.Raw,
 				P_Version,
 				P_Encoding,
-				Standalone_Image (C.signed_int'(Standalone_Type'Enum_Rep (Standalone)))) < 0
+				Standalone_Image (Standalone)) < 0
 			then
 				Raise_Last_Error;
 			end if;

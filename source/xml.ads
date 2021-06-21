@@ -158,6 +158,8 @@ package XML is
 	procedure Get_Document_Start (Object : in out Reader) is null;
 	procedure Get_Document_End (Object : in out Reader) is null;
 	
+	procedure Finish (Object : in out Reader);
+	
 	-- writer
 	
 	type Writer (<>) is limited private;

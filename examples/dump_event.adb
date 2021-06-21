@@ -107,6 +107,7 @@ procedure dump_event is
 					URI => "file://" & Name);
 		begin
 			Dump_XML (Reader);
+			XML.Finish (Reader);
 		exception
 			when E : XML.Data_Error =>
 				Ada.Text_IO.Put_Line (

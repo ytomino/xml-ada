@@ -561,6 +561,31 @@ package body XML is
 		end loop;
 	end Get_Until_Element_End;
 	
+	procedure Finish (Object : in out Reader) is
+		NC_Object : Non_Controlled_Reader
+			renames Controlled_Readers.Reference (Object).all;
+	begin
+		case NC_Object.State is
+			when Next =>
+				null;
+			when Remaining =>
+				Next (Object);
+			when Empty_Element =>
+				raise Data_Error; -- Element_End
+		end case;
+		declare
+			Node_Type : constant C.signed_int :=
+				C.libxml.xmlreader.xmlTextReaderNodeType (NC_Object.Raw);
+		begin
+			if Node_Type /=
+				C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
+					C.libxml.xmlreader.XML_READER_TYPE_NONE)
+			then
+				raise Data_Error;
+			end if;
+		end;
+	end Finish;
+	
 	procedure Next (Object : in out Reader) is
 		NC_Object : Non_Controlled_Reader
 			renames Controlled_Readers.Reference (Object).all;

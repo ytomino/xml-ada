@@ -67,19 +67,58 @@ package body XML is
 	
 	Version_Checked : Boolean := False;
 	
-	Error_Handler_Installed : Boolean := False;
+	-- implementation
 	
-	procedure Structured_Error_Handler (
-		userData : C.void_ptr;
-		error : access C.libxml.xmlerror.xmlError)
-		with Convention => C;
-	
-	procedure Structured_Error_Handler (
-		userData : C.void_ptr;
-		error : access C.libxml.xmlerror.xmlError) is
+	function Version return String is
 	begin
-		null; -- suppress fprintf
-	end Structured_Error_Handler;
+		Check_Version;
+		return To_String (C.libxml.globals.xmlParserVersion);
+	end Version;
+	
+	procedure Check_Version is
+	begin
+		if not Version_Checked then
+			Version_Checked := True;
+			C.libxml.xmlversion.xmlCheckVersion (C.libxml.xmlversion.LIBXML_VERSION);
+		end if;
+	end Check_Version;
+	
+	procedure Cleanup is
+	begin
+		C.libxml.parser.xmlCleanupParser;
+		C.libxml.xmlmemory.xmlMemoryDump;
+	end Cleanup;
+	
+	function No_Encoding return Encoding_Type is
+	begin
+		return null;
+	end No_Encoding;
+	
+	function Find (Name : String) return Encoding_Type is
+		Name_Length : constant C.size_t := Name'Length;
+		C_Name : C.char_array (0 .. Name_Length); -- NUL
+		Result : C.libxml.encoding.xmlCharEncodingHandlerPtr;
+	begin
+		memcpy (C_Name'Address, Name'Address, Name_Length);
+		C_Name (Name_Length) := C.char'Val (0);
+		Result :=
+			C.libxml.encoding.xmlFindCharEncodingHandler (C_Name (C_Name'First)'Access);
+		if Result = null then
+			raise Name_Error;
+		end if;
+		return Encoding_Type (Result);
+	end Find;
+	
+	function Name (Encoding : Encoding_Type) return String is
+	begin
+		if Encoding = null then
+			raise Constraint_Error;
+		else
+			return To_String (Encoding.name);
+		end if;
+	end Name;
+	
+	-- reader
 	
 	function Read_Handler (
 		context : C.void_ptr;
@@ -103,38 +142,6 @@ package body XML is
 		To_Input (context) (Item, Last);
 		return C.signed_int (Last);
 	end Read_Handler;
-	
-	function Write_Handler (
-		context : C.void_ptr;
-		buffer : access constant C.char;
-		len : C.signed_int)
-		return C.signed_int
-		with Convention => C;
-	
-	function Write_Handler (
-		context : C.void_ptr;
-		buffer : access constant C.char;
-		len : C.signed_int)
-		return C.signed_int
-	is
-		type O is access procedure (Item : in String);
-		function To_Output is new Ada.Unchecked_Conversion (C.void_ptr, O);
-		Item : String (1 .. Natural (len));
-		for Item'Address use buffer.all'Address;
-	begin
-		To_Output (context) (Item);
-		return len;
-	end Write_Handler;
-	
-	-- for standalone
-	No_Image : constant C.char_array := "no" & C.char'Val (0);
-	Yes_Image : constant C.char_array := "yes" & C.char'Val (0);
-	Standalone_Image : constant array (Standalone_Type) of C.char_const_ptr := (
-		No_Specific => null,
-		No => No_Image (No_Image'First)'Access,
-		Yes => Yes_Image (Yes_Image'First)'Access);
-	
-	-- reading one event
 	
 	procedure Read (
 		Object : in out Reader;
@@ -333,58 +340,7 @@ package body XML is
 		end case;
 	end Read;
 	
-	-- implementation
-	
-	function Version return String is
-	begin
-		Check_Version;
-		return To_String (C.libxml.globals.xmlParserVersion);
-	end Version;
-	
-	procedure Check_Version is
-	begin
-		if not Version_Checked then
-			Version_Checked := True;
-			C.libxml.xmlversion.xmlCheckVersion (C.libxml.xmlversion.LIBXML_VERSION);
-		end if;
-	end Check_Version;
-	
-	procedure Cleanup is
-	begin
-		C.libxml.parser.xmlCleanupParser;
-		C.libxml.xmlmemory.xmlMemoryDump;
-	end Cleanup;
-	
-	function No_Encoding return Encoding_Type is
-	begin
-		return null;
-	end No_Encoding;
-	
-	function Find (Name : String) return Encoding_Type is
-		Name_Length : constant C.size_t := Name'Length;
-		C_Name : C.char_array (0 .. Name_Length); -- NUL
-		Result : C.libxml.encoding.xmlCharEncodingHandlerPtr;
-	begin
-		memcpy (C_Name'Address, Name'Address, Name_Length);
-		C_Name (Name_Length) := C.char'Val (0);
-		Result :=
-			C.libxml.encoding.xmlFindCharEncodingHandler (C_Name (C_Name'First)'Access);
-		if Result = null then
-			raise Name_Error;
-		end if;
-		return Encoding_Type (Result);
-	end Find;
-	
-	function Name (Encoding : Encoding_Type) return String is
-	begin
-		if Encoding = null then
-			raise Constraint_Error;
-		else
-			return To_String (Encoding.name);
-		end if;
-	end Name;
-	
-	-- reader
+	-- implementation of reader
 	
 	function Create (
 		Input : not null access procedure (Item : out String; Last : out Natural);
@@ -568,6 +524,13 @@ package body XML is
 		Process (Parsed_Data.Event);
 	end Read;
 	
+	function Value (Parsing_Entry : Parsing_Entry_Type)
+		return Event_Reference_Type is
+	begin
+		return (Element => Parsing_Entry.Data.Event'Unrestricted_Access);
+			-- [gcc-6] wrongly detected as dangling
+	end Value;
+	
 	procedure Read (
 		Object : in out Reader;
 		Parsing_Entry : out Parsing_Entry_Type) is
@@ -598,13 +561,6 @@ package body XML is
 			end;
 		end loop;
 	end Read_Until_Element_End;
-	
-	function Value (Parsing_Entry : Parsing_Entry_Type)
-		return Event_Reference_Type is
-	begin
-		return (Element => Parsing_Entry.Data.Event'Unrestricted_Access);
-			-- [gcc-6] wrongly detected as dangling
-	end Value;
 	
 	procedure Next (Object : in out Reader) is
 		NC_Object : Non_Controlled_Reader
@@ -639,6 +595,38 @@ package body XML is
 	end Controlled_Readers;
 	
 	-- writer
+	
+	function Write_Handler (
+		context : C.void_ptr;
+		buffer : access constant C.char;
+		len : C.signed_int)
+		return C.signed_int
+		with Convention => C;
+	
+	function Write_Handler (
+		context : C.void_ptr;
+		buffer : access constant C.char;
+		len : C.signed_int)
+		return C.signed_int
+	is
+		type O is access procedure (Item : in String);
+		function To_Output is new Ada.Unchecked_Conversion (C.void_ptr, O);
+		Item : String (1 .. Natural (len));
+		for Item'Address use buffer.all'Address;
+	begin
+		To_Output (context) (Item);
+		return len;
+	end Write_Handler;
+	
+	-- for standalone
+	No_Image : constant C.char_array := "no" & C.char'Val (0);
+	Yes_Image : constant C.char_array := "yes" & C.char'Val (0);
+	Standalone_Image : constant array (Standalone_Type) of C.char_const_ptr := (
+		No_Specific => null,
+		No => No_Image (No_Image'First)'Access,
+		Yes => Yes_Image (Yes_Image'First)'Access);
+	
+	-- implementation of writer
 	
 	function Create (
 		Output : not null access procedure (Item : in String);
@@ -686,6 +674,22 @@ package body XML is
 			end return;
 		end;
 	end Create;
+	
+	function Finished (Object : Writer) return Boolean is
+		NC_Object : Non_Controlled_Writer
+			renames Controlled_Writers.Constant_Reference (Object).all;
+	begin
+		return NC_Object.Finished;
+	end Finished;
+	
+	procedure Flush (Object : in out Writer) is
+		NC_Object : Non_Controlled_Writer
+			renames Controlled_Writers.Constant_Reference (Object).all;
+	begin
+		if C.libxml.xmlwriter.xmlTextWriterFlush (NC_Object.Raw) < 0 then
+			raise Use_Error;
+		end if;
+	end Flush;
 	
 	procedure Set_Indent (Object : in out Writer; Indent : in Natural) is
 		NC_Object : Non_Controlled_Writer
@@ -903,15 +907,6 @@ package body XML is
 		end case;
 	end Write;
 	
-	procedure Flush (Object : in out Writer) is
-		NC_Object : Non_Controlled_Writer
-			renames Controlled_Writers.Constant_Reference (Object).all;
-	begin
-		if C.libxml.xmlwriter.xmlTextWriterFlush (NC_Object.Raw) < 0 then
-			raise Use_Error;
-		end if;
-	end Flush;
-	
 	procedure Finish (Object : in out Writer) is
 		pragma Check (Pre,
 			Check => not Finished (Object) or else raise Status_Error);
@@ -921,13 +916,6 @@ package body XML is
 		NC_Object.Finished := True;
 		Write_Document_End (Object);
 	end Finish;
-	
-	function Finished (Object : Writer) return Boolean is
-		NC_Object : Non_Controlled_Writer
-			renames Controlled_Writers.Constant_Reference (Object).all;
-	begin
-		return NC_Object.Finished;
-	end Finished;
 	
 	procedure Write_Document_Start (
 		Object : in out Writer;
@@ -982,17 +970,17 @@ package body XML is
 	
 	package body Controlled_Writers is
 		
-		function Reference (Object : in out XML.Writer)
-			return not null access Non_Controlled_Writer is
-		begin
-			return Writer (Object).Data'Unrestricted_Access;
-		end Reference;
-		
 		function Constant_Reference (Object : XML.Writer)
 			return not null access constant Non_Controlled_Writer is
 		begin
 			return Writer (Object).Data'Unchecked_Access;
 		end Constant_Reference;
+		
+		function Reference (Object : in out XML.Writer)
+			return not null access Non_Controlled_Writer is
+		begin
+			return Writer (Object).Data'Unrestricted_Access;
+		end Reference;
 		
 		overriding procedure Finalize (Object : in out Writer) is
 		begin
@@ -1005,6 +993,22 @@ package body XML is
 	end Controlled_Writers;
 	
 	-- exceptions
+	
+	Error_Handler_Installed : Boolean := False;
+	
+	procedure Structured_Error_Handler (
+		userData : C.void_ptr;
+		error : access C.libxml.xmlerror.xmlError)
+		with Convention => C;
+	
+	procedure Structured_Error_Handler (
+		userData : C.void_ptr;
+		error : access C.libxml.xmlerror.xmlError) is
+	begin
+		null; -- suppress fprintf
+	end Structured_Error_Handler;
+	
+	-- implementation of exceptions
 	
 	procedure Install_Error_Handlers is
 	begin

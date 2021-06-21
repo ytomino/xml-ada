@@ -18,6 +18,26 @@ package Serialization.XML is
 	
 private
 	
+	type Serializer_Access is access Serializer;
+	
+	type XML_Reader;
+	type XML_Reader_Access is access XML_Reader;
+	type XML_Writer;
+	type XML_Writer_Access is access XML_Writer;
+	
+	type Reference_Type (
+		Serializer : not null access Serializer) is
+		limited new Ada.Finalization.Limited_Controlled
+		with record
+			Serializer_Body : Serializer_Access;
+			Reader_Body : XML_Reader_Access;
+			Writer_Body : XML_Writer_Access;
+		end record;
+	
+	overriding procedure Finalize (Object : in out Reference_Type);
+	
+	-- reading
+	
 	type XML_Reader is limited new Serialization.Reader
 		with record
 			Reader : not null access Standard.XML.Reader;
@@ -37,6 +57,8 @@ private
 	overriding procedure Advance (
 		Object : not null access XML_Reader;
 		Position : in State);
+	
+	-- writing
 	
 	type XML_Writer is limited new Serialization.Writer
 		with record
@@ -58,20 +80,5 @@ private
 		Name : in String);
 	overriding procedure Leave_Sequence (
 		Object : not null access XML_Writer);
-	
-	type Serializer_Access is access Serializer;
-	type XML_Reader_Access is access XML_Reader;
-	type XML_Writer_Access is access XML_Writer;
-	
-	type Reference_Type (
-		Serializer : not null access Serializer) is
-		limited new Ada.Finalization.Limited_Controlled
-		with record
-			Serializer_Body : Serializer_Access;
-			Reader_Body : XML_Reader_Access;
-			Writer_Body : XML_Writer_Access;
-		end record;
-	
-	overriding procedure Finalize (Object : in out Reference_Type);
 	
 end Serialization.XML;

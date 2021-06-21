@@ -155,6 +155,9 @@ package XML is
 	
 	procedure Get_Until_Element_End (Object : in out Reader);
 	
+	procedure Get_Document_Start (Object : in out Reader) is null;
+	procedure Get_Document_End (Object : in out Reader) is null;
+	
 	-- writer
 	
 	type Writer (<>) is limited private;

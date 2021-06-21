@@ -200,6 +200,7 @@ begin
 					XML.Get (R, Process'Access);
 				end;
 			end loop;
+			XML.Finish (R);
 			Put (" ok");
 			New_Line;
 		end;

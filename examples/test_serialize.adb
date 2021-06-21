@@ -113,6 +113,7 @@ begin
 		begin
 			Put ("Reading...");
 			IO (Serialization.XML.Reading (R'Access, Root_Tag).Serializer, Data2);
+			XML.Finish (R);
 			Put (" ok");
 			New_Line;
 		end;

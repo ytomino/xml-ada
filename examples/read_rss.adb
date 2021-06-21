@@ -325,6 +325,7 @@ procedure read_rss is
 					URI => "file://" & Name);
 		begin
 			Read_RSS (R);
+			XML.Finish (R);
 		end;
 		Ada.Streams.Stream_IO.Close (File);
 	end Read_RSS_From_File;

@@ -85,7 +85,7 @@ procedure dump_event is
 		Put_Line ("base URI = " & XML.Base_URI (Reader));
 		loop
 			declare
-				Parsing_Entry : XML.Parsing_Entry_Type;
+				Parsing_Entry : aliased XML.Parsing_Entry_Type;
 			begin
 				XML.Read (Reader, Parsing_Entry);
 				declare

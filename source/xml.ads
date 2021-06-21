@@ -144,7 +144,7 @@ package XML is
 		Element : not null access constant Event) is null record
 		with Implicit_Dereference => Element;
 	
-	function Value (Parsing_Entry : Parsing_Entry_Type)
+	function Value (Parsing_Entry : aliased Parsing_Entry_Type)
 		return Event_Reference_Type;
 	
 	pragma Inline (Value);

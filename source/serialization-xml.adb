@@ -98,7 +98,7 @@ package body Serialization.XML is
 			Object.Next_Next_Name := null;
 		else
 			declare
-				Parsing_Entry : Standard.XML.Parsing_Entry_Type;
+				Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
 			begin
 				Standard.XML.Read (Object.Reader.all, Parsing_Entry);
 				Handle_Name (
@@ -126,7 +126,7 @@ package body Serialization.XML is
 					Handle_Name (Object, In_Mapping, Event, Tag);
 			end case;
 		end Process;
-		Parsing_Entry : Standard.XML.Parsing_Entry_Type;
+		Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
 	begin
 		Standard.XML.Read (Object.Reader.all, Parsing_Entry);
 		Process (Standard.XML.Value (Parsing_Entry).Element.all);
@@ -142,7 +142,7 @@ package body Serialization.XML is
 	
 	procedure Read_Value (
 		Object : not null access XML_Reader) is
-		Parsing_Entry : Standard.XML.Parsing_Entry_Type;
+		Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
 	begin
 		Standard.XML.Read (Object.Reader.all, Parsing_Entry);
 		case Standard.XML.Value (Parsing_Entry).Element.Event_Type is

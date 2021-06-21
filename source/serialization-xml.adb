@@ -301,6 +301,7 @@ package body Serialization.XML is
 		do
 			pragma Unreferenced (Result);
 			In_Controlled := True;
+			Standard.XML.Put_Document_Start (Writer.all);
 			Standard.XML.Put (
 				Writer.all,
 				(Event_Type => Standard.XML.Document_Type,
@@ -335,6 +336,7 @@ package body Serialization.XML is
 		end if;
 		if Object.Level = 0 then
 			Write_Element_End (Object);
+			Standard.XML.Put_Document_End (Object.Writer.all);
 		end if;
 	end Put;
 	
@@ -355,8 +357,11 @@ package body Serialization.XML is
 	overriding procedure Leave_Mapping (
 		Object : not null access XML_Writer) is
 	begin
-		Object.Level := Object.Level - 1;
 		Write_Element_End (Object);
+		Object.Level := Object.Level - 1;
+		if Object.Level = 0 then
+			Standard.XML.Put_Document_End (Object.Writer.all);
+		end if;
 	end Leave_Mapping;
 	
 	overriding procedure Enter_Sequence (

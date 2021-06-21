@@ -79,7 +79,7 @@ begin
 		W : aliased XML.Writer := XML.Create (Put'Access);
 	begin
 		IO (Serialization.XML.Writing (W'Access, Root_Tag).Serializer, Data);
-		XML.Flush (W);
+		XML.Finish (W);
 	end;
 	declare
 		File : Ada.Streams.Stream_IO.File_Type;
@@ -91,7 +91,7 @@ begin
 		begin
 			Put ("Writing...");
 			IO (Serialization.XML.Writing (W'Access, Root_Tag).Serializer, Data);
-			XML.Flush (W);
+			XML.Finish (W);
 			Put (" ok");
 			New_Line;
 		end;
@@ -121,7 +121,7 @@ begin
 			W : aliased XML.Writer := XML.Create (Put'Access);
 		begin
 			IO (Serialization.XML.Writing (W'Access, Root_Tag).Serializer, Data2);
-			XML.Flush (W);
+			XML.Finish (W);
 		end;
 		if Data2 /= Data then
 			raise Program_Error;

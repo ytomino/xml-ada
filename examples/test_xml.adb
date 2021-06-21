@@ -140,7 +140,7 @@ begin
 	begin
 		XML.Set_Indent (W, (1 => Latin_1.HT));
 		for I in Data'Range loop
-			XML.Write (W, Data (I).all);
+			XML.Put (W, Data (I).all);
 		end loop;
 		XML.Flush (W);
 	end;
@@ -159,7 +159,7 @@ begin
 			Put ("Writing...");
 			for I in Data'Range loop
 				Put (I'Img);
-				XML.Write (W, Data (I).all);
+				XML.Put (W, Data (I).all);
 			end loop;
 			XML.Flush (W);
 			Put (" ok");
@@ -197,7 +197,7 @@ begin
 						end if;
 					end Process;
 				begin
-					XML.Read (R, Process'Access);
+					XML.Get (R, Process'Access);
 				end;
 			end loop;
 			Put (" ok");

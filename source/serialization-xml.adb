@@ -100,7 +100,7 @@ package body Serialization.XML is
 			declare
 				Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
 			begin
-				Standard.XML.Read (Object.Reader.all, Parsing_Entry);
+				Standard.XML.Get (Object.Reader.all, Parsing_Entry);
 				Handle_Name (
 					Object,
 					Position,
@@ -128,10 +128,10 @@ package body Serialization.XML is
 		end Process;
 		Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
 	begin
-		Standard.XML.Read (Object.Reader.all, Parsing_Entry);
+		Standard.XML.Get (Object.Reader.all, Parsing_Entry);
 		Process (Standard.XML.Value (Parsing_Entry).Element.all);
 		if Object.Level = 0 then
-			Standard.XML.Read (Object.Reader.all, Parsing_Entry);
+			Standard.XML.Get (Object.Reader.all, Parsing_Entry);
 			Process (Standard.XML.Value (Parsing_Entry).Element.all);
 			if Object.Level = 0 then
 				raise Standard.XML.Data_Error
@@ -144,7 +144,7 @@ package body Serialization.XML is
 		Object : not null access XML_Reader) is
 		Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
 	begin
-		Standard.XML.Read (Object.Reader.all, Parsing_Entry);
+		Standard.XML.Get (Object.Reader.all, Parsing_Entry);
 		case Standard.XML.Value (Parsing_Entry).Element.Event_Type is
 			when Standard.XML.Text | Standard.XML.CDATA =>
 				Object.Next_Kind := Value;
@@ -165,7 +165,7 @@ package body Serialization.XML is
 				raise Standard.XML.Data_Error;
 		end case;
 		if Object.Next_Kind = Value then
-			Standard.XML.Read (Object.Reader.all, Parsing_Entry);
+			Standard.XML.Get (Object.Reader.all, Parsing_Entry);
 			if Standard.XML.Value (Parsing_Entry).Element.Event_Type /=
 				Standard.XML.Element_End
 			then
@@ -266,7 +266,7 @@ package body Serialization.XML is
 		Object : not null access XML_Writer;
 		Name : in String) is
 	begin
-		Standard.XML.Write (
+		Standard.XML.Put (
 			Object.Writer.all,
 			(Event_Type => Standard.XML.Element_Start, Name => Name'Unrestricted_Access));
 	end Write_Element_Start;
@@ -274,9 +274,7 @@ package body Serialization.XML is
 	procedure Write_Element_End (
 		Object : not null access XML_Writer) is
 	begin
-		Standard.XML.Write (
-			Object.Writer.all,
-			(Event_Type => Standard.XML.Element_End));
+		Standard.XML.Put (Object.Writer.all, (Event_Type => Standard.XML.Element_End));
 	end Write_Element_End;
 	
 	-- implementation of writing
@@ -303,7 +301,7 @@ package body Serialization.XML is
 		do
 			pragma Unreferenced (Result);
 			In_Controlled := True;
-			Standard.XML.Write (
+			Standard.XML.Put (
 				Writer.all,
 				(Event_Type => Standard.XML.Document_Type,
 					Name => Tag'Unrestricted_Access,
@@ -329,7 +327,7 @@ package body Serialization.XML is
 		if Name /= "" then
 			Write_Element_Start (Object, Name);
 		end if;
-		Standard.XML.Write (
+		Standard.XML.Put (
 			Object.Writer.all,
 			(Event_Type => Standard.XML.Text, Content => Item'Unrestricted_Access));
 		if Name /= "" then

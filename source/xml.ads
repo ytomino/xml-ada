@@ -133,7 +133,7 @@ package XML is
 	
 	function Base_URI (Object : Reader) return String;
 	
-	procedure Read (
+	procedure Get (
 		Object : in out Reader;
 		Process : not null access procedure (Event : in XML.Event));
 	
@@ -149,11 +149,11 @@ package XML is
 	
 	pragma Inline (Value);
 	
-	procedure Read (
+	procedure Get (
 		Object : in out Reader;
 		Parsing_Entry : out Parsing_Entry_Type);
 	
-	procedure Read_Until_Element_End (Object : in out Reader);
+	procedure Get_Until_Element_End (Object : in out Reader);
 	
 	-- writer
 	
@@ -174,7 +174,7 @@ package XML is
 	procedure Set_Indent (Object : in out Writer; Indent : in Natural);
 	procedure Set_Indent (Object : in out Writer; Indent : in String);
 	
-	procedure Write (Object : in out Writer; Event : in XML.Event);
+	procedure Put (Object : in out Writer; Event : in XML.Event);
 	
 	procedure Finish (Object : in out Writer);
 	
@@ -261,13 +261,12 @@ private
 	
 	-- writer
 	
-	procedure Write_Document_Start (
+	procedure Put_Document_Start (
 		Object : in out Writer;
 		Version : access constant String;
 		Encoding : Encoding_Type;
 		Standalone : Standalone_Type);
-	procedure Write_Document_End (
-		Object : in out Writer);
+	procedure Put_Document_End (Object : in out Writer);
 	
 	type Non_Controlled_Writer is record
 		Raw : C.libxml.xmlwriter.xmlTextWriterPtr := null;

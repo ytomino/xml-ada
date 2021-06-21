@@ -87,7 +87,7 @@ procedure dump_event is
 			declare
 				Parsing_Entry : aliased XML.Parsing_Entry_Type;
 			begin
-				XML.Read (Reader, Parsing_Entry);
+				XML.Get (Reader, Parsing_Entry);
 				declare
 					Event : XML.Event renames XML.Value (Parsing_Entry);
 				begin

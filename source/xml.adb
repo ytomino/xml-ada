@@ -514,7 +514,7 @@ package body XML is
 				C.libxml.xmlreader.xmlTextReaderConstBaseUri (NC_Object.Raw)));
 	end Base_URI;
 	
-	procedure Read (
+	procedure Get (
 		Object : in out Reader;
 		Process : not null access procedure (Event : in XML.Event))
 	is
@@ -522,7 +522,7 @@ package body XML is
 	begin
 		Read (Object, Parsed_Data);
 		Process (Parsed_Data.Event);
-	end Read;
+	end Get;
 	
 	function Value (Parsing_Entry : aliased Parsing_Entry_Type)
 		return Event_Reference_Type is
@@ -530,14 +530,14 @@ package body XML is
 		return (Element => Parsing_Entry.Data.Event'Access);
 	end Value;
 	
-	procedure Read (
+	procedure Get (
 		Object : in out Reader;
 		Parsing_Entry : out Parsing_Entry_Type) is
 	begin
 		Read (Object, Parsing_Entry.Data);
-	end Read;
+	end Get;
 	
-	procedure Read_Until_Element_End (Object : in out Reader) is
+	procedure Get_Until_Element_End (Object : in out Reader) is
 	begin
 		loop
 			declare
@@ -551,7 +551,7 @@ package body XML is
 				end;
 				case T is
 					when Element_Start =>
-						Read_Until_Element_End (Object);
+						Get_Until_Element_End (Object);
 					when Element_End =>
 						exit;
 					when others =>
@@ -559,7 +559,7 @@ package body XML is
 				end case;
 			end;
 		end loop;
-	end Read_Until_Element_End;
+	end Get_Until_Element_End;
 	
 	procedure Next (Object : in out Reader) is
 		NC_Object : Non_Controlled_Reader
@@ -665,7 +665,7 @@ package body XML is
 						raise Use_Error;
 					end if;
 				end;
-				Write_Document_Start (
+				Put_Document_Start (
 					Result,
 					Version => Version,
 					Encoding => Encoding,
@@ -718,7 +718,7 @@ package body XML is
 		end if;
 	end Set_Indent;
 	
-	procedure Write (Object : in out Writer; Event : in XML.Event) is
+	procedure Put (Object : in out Writer; Event : in XML.Event) is
 		pragma Check (Pre,
 			Check => not Finished (Object) or else raise Status_Error);
 		NC_Object : Non_Controlled_Writer
@@ -904,7 +904,7 @@ package body XML is
 			when XML_Declaration =>
 				raise Program_Error; -- unimplemented
 		end case;
-	end Write;
+	end Put;
 	
 	procedure Finish (Object : in out Writer) is
 		pragma Check (Pre,
@@ -913,10 +913,10 @@ package body XML is
 			renames Controlled_Writers.Reference (Object).all;
 	begin
 		NC_Object.Finished := True;
-		Write_Document_End (Object);
+		Put_Document_End (Object);
 	end Finish;
 	
-	procedure Write_Document_Start (
+	procedure Put_Document_Start (
 		Object : in out Writer;
 		Version : access constant String;
 		Encoding : Encoding_Type;
@@ -953,11 +953,9 @@ package body XML is
 				Raise_Last_Error;
 			end if;
 		end;
-	end Write_Document_Start;
+	end Put_Document_Start;
 	
-	procedure Write_Document_End (
-		Object : in out Writer)
-	is
+	procedure Put_Document_End (Object : in out Writer) is
 		NC_Object : Non_Controlled_Writer
 			renames Controlled_Writers.Reference (Object).all;
 	begin
@@ -965,7 +963,7 @@ package body XML is
 		if C.libxml.xmlwriter.xmlTextWriterEndDocument (NC_Object.Raw) < 0 then
 			Raise_Last_Error;
 		end if;
-	end Write_Document_End;
+	end Put_Document_End;
 	
 	package body Controlled_Writers is
 		
@@ -984,7 +982,7 @@ package body XML is
 		overriding procedure Finalize (Object : in out Writer) is
 		begin
 			if not Object.Data.Finished then
-				Write_Document_End (XML.Writer (Object));
+				Put_Document_End (XML.Writer (Object));
 			end if;
 			C.libxml.xmlwriter.xmlFreeTextWriter (Object.Data.Raw);
 		end Finalize;

@@ -161,7 +161,7 @@ package body XML.Streams is
 						raise Use_Error;
 					end if;
 				end;
-				Write_Document_Start (
+				Put_Document_Start (
 					Result,
 					Version => Version,
 					Encoding => Encoding,

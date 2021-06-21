@@ -31,7 +31,7 @@ procedure read_rss is
 					end case;
 				end Process;
 			begin
-				XML.Read (Reader, Process'Access);
+				XML.Get (Reader, Process'Access);
 				case S1 is
 					when RSS_1 =>
 						Ada.Text_IO.Put_Line (XML.Base_URI (Reader) & " is RSS 1.0.");
@@ -176,10 +176,10 @@ procedure read_rss is
 				begin
 					loop
 						if S (Top) = Unknown then
-							XML.Read_Until_Element_End (Reader);
+							XML.Get_Until_Element_End (Reader);
 							Top := Top - 1;
 						else
-							XML.Read (Reader, Process'Access);
+							XML.Get (Reader, Process'Access);
 						end if;
 						exit when Top < S'First;
 					end loop;
@@ -305,10 +305,10 @@ procedure read_rss is
 				begin
 					loop
 						if S (Top) = Unknown then
-							XML.Read_Until_Element_End (Reader);
+							XML.Get_Until_Element_End (Reader);
 							Top := Top - 1;
 						else
-							XML.Read (Reader, Process'Access);
+							XML.Get (Reader, Process'Access);
 						end if;
 						exit when Top < S'First;
 					end loop;

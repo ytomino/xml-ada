@@ -524,11 +524,10 @@ package body XML is
 		Process (Parsed_Data.Event);
 	end Read;
 	
-	function Value (Parsing_Entry : Parsing_Entry_Type)
+	function Value (Parsing_Entry : aliased Parsing_Entry_Type)
 		return Event_Reference_Type is
 	begin
-		return (Element => Parsing_Entry.Data.Event'Unrestricted_Access);
-			-- [gcc-6] wrongly detected as dangling
+		return (Element => Parsing_Entry.Data.Event'Access);
 	end Value;
 	
 	procedure Read (

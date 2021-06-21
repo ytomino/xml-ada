@@ -10,9 +10,7 @@ package XML.Streams is
 	
 	function Create (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
-		Encoding : Encoding_Type := No_Encoding;
-		Version : access constant String := null;
-		Standalone : Standalone_Type := No_Specific)
+		Encoding : Encoding_Type := No_Encoding)
 		return Writer;
 	
 end XML.Streams;

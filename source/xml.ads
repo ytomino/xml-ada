@@ -161,9 +161,7 @@ package XML is
 	
 	function Create (
 		Output : not null access procedure (Item : in String);
-		Encoding : Encoding_Type := No_Encoding;
-		Version : access constant String := null;
-		Standalone : Standalone_Type := No_Specific)
+		Encoding : Encoding_Type := No_Encoding)
 		return Writer;
 	
 	function Finished (Object : Writer) return Boolean;
@@ -175,6 +173,13 @@ package XML is
 	procedure Set_Indent (Object : in out Writer; Indent : in String);
 	
 	procedure Put (Object : in out Writer; Event : in XML.Event);
+	
+	procedure Put_Document_Start (
+		Object : in out Writer;
+		Version : access constant String := null;
+		Encoding : Encoding_Type := No_Encoding;
+		Standalone : Standalone_Type := No_Specific);
+	procedure Put_Document_End (Object : in out Writer);
 	
 	procedure Finish (Object : in out Writer);
 	
@@ -260,13 +265,6 @@ private
 	type Reader is new Controlled_Readers.Reader;
 	
 	-- writer
-	
-	procedure Put_Document_Start (
-		Object : in out Writer;
-		Version : access constant String;
-		Encoding : Encoding_Type;
-		Standalone : Standalone_Type);
-	procedure Put_Document_End (Object : in out Writer);
 	
 	type Non_Controlled_Writer is record
 		Raw : C.libxml.xmlwriter.xmlTextWriterPtr := null;

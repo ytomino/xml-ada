@@ -629,9 +629,7 @@ package body XML is
 	
 	function Create (
 		Output : not null access procedure (Item : in String);
-		Encoding : Encoding_Type := No_Encoding;
-		Version : access constant String := null;
-		Standalone : Standalone_Type := No_Specific)
+		Encoding : Encoding_Type := No_Encoding)
 		return Writer
 	is
 		type O is access procedure (Item : in String);
@@ -665,11 +663,6 @@ package body XML is
 						raise Use_Error;
 					end if;
 				end;
-				Put_Document_Start (
-					Result,
-					Version => Version,
-					Encoding => Encoding,
-					Standalone => Standalone);
 			end return;
 		end;
 	end Create;
@@ -906,21 +899,11 @@ package body XML is
 		end case;
 	end Put;
 	
-	procedure Finish (Object : in out Writer) is
-		pragma Check (Pre,
-			Check => not Finished (Object) or else raise Status_Error);
-		NC_Object : Non_Controlled_Writer
-			renames Controlled_Writers.Reference (Object).all;
-	begin
-		NC_Object.Finished := True;
-		Put_Document_End (Object);
-	end Finish;
-	
 	procedure Put_Document_Start (
 		Object : in out Writer;
-		Version : access constant String;
-		Encoding : Encoding_Type;
-		Standalone : Standalone_Type)
+		Version : access constant String := null;
+		Encoding : Encoding_Type := No_Encoding;
+		Standalone : Standalone_Type := No_Specific)
 	is
 		NC_Object : Non_Controlled_Writer
 			renames Controlled_Writers.Reference (Object).all;
@@ -965,6 +948,16 @@ package body XML is
 		end if;
 	end Put_Document_End;
 	
+	procedure Finish (Object : in out Writer) is
+		pragma Check (Pre,
+			Check => not Finished (Object) or else raise Status_Error);
+		NC_Object : Non_Controlled_Writer
+			renames Controlled_Writers.Reference (Object).all;
+	begin
+		NC_Object.Finished := True;
+		Flush (Object);
+	end Finish;
+	
 	package body Controlled_Writers is
 		
 		function Constant_Reference (Object : XML.Writer)
@@ -981,9 +974,6 @@ package body XML is
 		
 		overriding procedure Finalize (Object : in out Writer) is
 		begin
-			if not Object.Data.Finished then
-				Put_Document_End (XML.Writer (Object));
-			end if;
 			C.libxml.xmlwriter.xmlFreeTextWriter (Object.Data.Raw);
 		end Finalize;
 		

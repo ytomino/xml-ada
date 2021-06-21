@@ -136,13 +136,15 @@ begin
 	end loop;
 	-- writer
 	declare
-		W : XML.Writer := XML.Create (Put'Access, UTF_8, Version_1_0'Access, XML.Yes);
+		W : XML.Writer := XML.Create (Put'Access, UTF_8);
 	begin
 		XML.Set_Indent (W, (1 => Latin_1.HT));
+		XML.Put_Document_Start (W, Version_1_0'Access, UTF_8, XML.Yes);
 		for I in Data'Range loop
 			XML.Put (W, Data (I).all);
 		end loop;
-		XML.Flush (W);
+		XML.Put_Document_End (W);
+		XML.Finish (W);
 	end;
 	declare
 		File : Ada.Streams.Stream_IO.File_Type;
@@ -150,18 +152,16 @@ begin
 		Ada.Streams.Stream_IO.Create (File, Name => Test_File_Name);
 		declare
 			W : XML.Writer :=
-				XML.Streams.Create (
-					Ada.Streams.Stream_IO.Stream (File),
-					UTF_8,
-					Version_1_0'Access,
-					XML.Yes);
+				XML.Streams.Create (Ada.Streams.Stream_IO.Stream (File), UTF_8);
 		begin
 			Put ("Writing...");
+			XML.Put_Document_Start (W, Version_1_0'Access, UTF_8, XML.Yes);
 			for I in Data'Range loop
 				Put (I'Img);
 				XML.Put (W, Data (I).all);
 			end loop;
-			XML.Flush (W);
+			XML.Put_Document_End (W);
+			XML.Finish (W);
 			Put (" ok");
 			New_Line;
 		end;

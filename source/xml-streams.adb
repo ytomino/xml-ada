@@ -125,9 +125,7 @@ package body XML.Streams is
 	
 	function Create (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
-		Encoding : Encoding_Type := No_Encoding;
-		Version : access constant String := null;
-		Standalone : Standalone_Type := No_Specific)
+		Encoding : Encoding_Type := No_Encoding)
 		return Writer
 	is
 		package Conv is
@@ -161,11 +159,6 @@ package body XML.Streams is
 						raise Use_Error;
 					end if;
 				end;
-				Put_Document_Start (
-					Result,
-					Version => Version,
-					Encoding => Encoding,
-					Standalone => Standalone);
 			end return;
 		end;
 	end Create;

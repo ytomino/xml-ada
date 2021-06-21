@@ -10,6 +10,8 @@ package body XML.Streams is
 	procedure memcpy (dst, src : System.Address; n : C.size_t)
 		with Import, Convention => Intrinsic, External_Name => "__builtin_memcpy";
 	
+	-- reader
+	
 	function Read_Handler (
 		context : C.void_ptr;
 		buffer : access C.char;
@@ -42,33 +44,7 @@ package body XML.Streams is
 		return C.signed_int (Last);
 	end Read_Handler;
 	
-	function Write_Handler (
-		context : C.void_ptr;
-		buffer : access constant C.char;
-		len : C.signed_int)
-		return C.signed_int
-		with Convention => C;
-	
-	function Write_Handler (
-		context : C.void_ptr;
-		buffer : access constant C.char;
-		len : C.signed_int)
-		return C.signed_int
-	is
-		package Conv is
-			new System.Address_To_Access_Conversions (Ada.Streams.Root_Stream_Type'Class);
-		Stream : constant Conv.Object_Pointer :=
-			Conv.To_Pointer (System.Address (context));
-		Item :
-			Ada.Streams.Stream_Element_Array (
-				1 .. Ada.Streams.Stream_Element_Offset (len));
-		for Item'Address use buffer.all'Address;
-	begin
-		Ada.Streams.Write (Stream.all, Item);
-		return len;
-	end Write_Handler;
-	
-	-- implementation
+	-- implementation of reader
 	
 	function Create (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
@@ -116,6 +92,36 @@ package body XML.Streams is
 			end return;
 		end;
 	end Create;
+	
+	-- writer
+	
+	function Write_Handler (
+		context : C.void_ptr;
+		buffer : access constant C.char;
+		len : C.signed_int)
+		return C.signed_int
+		with Convention => C;
+	
+	function Write_Handler (
+		context : C.void_ptr;
+		buffer : access constant C.char;
+		len : C.signed_int)
+		return C.signed_int
+	is
+		package Conv is
+			new System.Address_To_Access_Conversions (Ada.Streams.Root_Stream_Type'Class);
+		Stream : constant Conv.Object_Pointer :=
+			Conv.To_Pointer (System.Address (context));
+		Item :
+			Ada.Streams.Stream_Element_Array (
+				1 .. Ada.Streams.Stream_Element_Offset (len));
+		for Item'Address use buffer.all'Address;
+	begin
+		Ada.Streams.Write (Stream.all, Item);
+		return len;
+	end Write_Handler;
+	
+	-- implementation of writer
 	
 	function Create (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;

@@ -137,8 +137,6 @@ package XML is
 		Object : in out Reader;
 		Process : not null access procedure (Event : in XML.Event));
 	
-	procedure Read_Until_Element_End (Object : in out Reader);
-	
 	type Parsing_Entry_Type is limited private;
 	pragma Preelaborable_Initialization (Parsing_Entry_Type);
 	
@@ -155,6 +153,8 @@ package XML is
 		Object : in out Reader;
 		Parsing_Entry : out Parsing_Entry_Type);
 	
+	procedure Read_Until_Element_End (Object : in out Reader);
+	
 	-- writer
 	
 	type Writer (<>) is limited private;
@@ -166,16 +166,17 @@ package XML is
 		Standalone : Standalone_Type := No_Specific)
 		return Writer;
 	
+	function Finished (Object : Writer) return Boolean;
+	pragma Inline (Finished);
+	
+	procedure Flush (Object : in out Writer);
+	
 	procedure Set_Indent (Object : in out Writer; Indent : in Natural);
 	procedure Set_Indent (Object : in out Writer; Indent : in String);
 	
 	procedure Write (Object : in out Writer; Event : in XML.Event);
 	
-	procedure Flush (Object : in out Writer);
 	procedure Finish (Object : in out Writer);
-	
-	function Finished (Object : Writer) return Boolean;
-	pragma Inline (Finished);
 	
 	-- exceptions
 	
@@ -278,13 +279,13 @@ private
 		
 		type Writer is limited private;
 		
-		function Reference (Object : in out XML.Writer)
-			return not null access Non_Controlled_Writer;
 		function Constant_Reference (Object : XML.Writer)
 			return not null access constant Non_Controlled_Writer;
+		function Reference (Object : in out XML.Writer)
+			return not null access Non_Controlled_Writer;
 		
-		pragma Inline (Reference);
 		pragma Inline (Constant_Reference);
+		pragma Inline (Reference);
 		
 	private
 		

@@ -3,16 +3,7 @@ package body Serialization.XML is
 	use type Ada.Strings.Unbounded.String_Access;
 	use type Standard.XML.Event_Type;
 	
-	Sequence_Item_Name : aliased String := "item";
-	
 	Null_String : aliased String := "";
-	
-	procedure Free is
-		new Ada.Unchecked_Deallocation (Serializer, Serializer_Access);
-	procedure Free is
-		new Ada.Unchecked_Deallocation (XML_Reader, XML_Reader_Access);
-	procedure Free is
-		new Ada.Unchecked_Deallocation (XML_Writer, XML_Writer_Access);
 	
 	procedure Free_And_Null (X : in out Ada.Strings.Unbounded.String_Access) is
 	begin
@@ -21,6 +12,40 @@ package body Serialization.XML is
 			X := Null_String'Access;
 		end if;
 	end Free_And_Null;
+	
+	Sequence_Item_Name : aliased String := "item";
+	
+	procedure Free is
+		new Ada.Unchecked_Deallocation (Serializer, Serializer_Access);
+	
+	procedure Free is
+		new Ada.Unchecked_Deallocation (XML_Reader, XML_Reader_Access);
+	procedure Free is
+		new Ada.Unchecked_Deallocation (XML_Writer, XML_Writer_Access);
+	
+	-- private implementation
+	
+	overriding procedure Finalize (Object : in out Reference_Type) is
+	begin
+		Free (Object.Serializer_Body);
+		if Object.Reader_Body /= null then
+			if Object.Reader_Body.Next_Name /= Null_String'Access then
+				Ada.Strings.Unbounded.Free (Object.Reader_Body.Next_Name);
+			end if;
+			if Object.Reader_Body.Next_Value /= Null_String'Access then
+				Ada.Strings.Unbounded.Free (Object.Reader_Body.Next_Value);
+			end if;
+			if Object.Reader_Body.Next_Next_Name /= Sequence_Item_Name'Access then
+				Ada.Strings.Unbounded.Free (Object.Reader_Body.Next_Next_Name);
+			end if;
+			Free (Object.Reader_Body);
+		end if;
+		if Object.Writer_Body /= null then
+			Free (Object.Writer_Body);
+		end if;
+	end Finalize;
+	
+	-- reading
 	
 	procedure Handle_Name (
 		Object : not null access XML_Reader;
@@ -149,24 +174,7 @@ package body Serialization.XML is
 		end if;
 	end Read_Value;
 	
-	procedure Write_Element_Start (
-		Object : not null access XML_Writer;
-		Name : in String) is
-	begin
-		Standard.XML.Write (
-			Object.Writer.all,
-			(Event_Type => Standard.XML.Element_Start, Name => Name'Unrestricted_Access));
-	end Write_Element_Start;
-	
-	procedure Write_Element_End (
-		Object : not null access XML_Writer) is
-	begin
-		Standard.XML.Write (
-			Object.Writer.all,
-			(Event_Type => Standard.XML.Element_End));
-	end Write_Element_End;
-	
-	-- implementation
+	-- implementation of reading
 	
 	function Reading (
 		Reader : not null access Standard.XML.Reader;
@@ -222,18 +230,6 @@ package body Serialization.XML is
 			raise;
 	end Reading;
 	
-	overriding procedure Advance (
-		Object : not null access XML_Reader;
-		Position : in State) is
-	begin
-		Free_And_Null (Object.Next_Name);
-		Free_And_Null (Object.Next_Value);
-		Read_Name (Object, Position);
-		if Object.Next_Kind = Value then
-			Read_Value (Object);
-		end if;
-	end Advance;
-	
 	overriding function Next_Kind (Object : not null access XML_Reader)
 		return Stream_Element_Kind is
 	begin
@@ -251,6 +247,39 @@ package body Serialization.XML is
 	begin
 		return Object.Next_Value;
 	end Next_Value;
+	
+	overriding procedure Advance (
+		Object : not null access XML_Reader;
+		Position : in State) is
+	begin
+		Free_And_Null (Object.Next_Name);
+		Free_And_Null (Object.Next_Value);
+		Read_Name (Object, Position);
+		if Object.Next_Kind = Value then
+			Read_Value (Object);
+		end if;
+	end Advance;
+	
+	-- writing
+	
+	procedure Write_Element_Start (
+		Object : not null access XML_Writer;
+		Name : in String) is
+	begin
+		Standard.XML.Write (
+			Object.Writer.all,
+			(Event_Type => Standard.XML.Element_Start, Name => Name'Unrestricted_Access));
+	end Write_Element_Start;
+	
+	procedure Write_Element_End (
+		Object : not null access XML_Writer) is
+	begin
+		Standard.XML.Write (
+			Object.Writer.all,
+			(Event_Type => Standard.XML.Element_End));
+	end Write_Element_End;
+	
+	-- implementation of writing
 	
 	function Writing (
 		Writer : not null access Standard.XML.Writer;
@@ -340,25 +369,5 @@ package body Serialization.XML is
 	overriding procedure Leave_Sequence (
 		Object : not null access XML_Writer)
 		renames Leave_Mapping;
-	
-	overriding procedure Finalize (Object : in out Reference_Type) is
-	begin
-		Free (Object.Serializer_Body);
-		if Object.Reader_Body /= null then
-			if Object.Reader_Body.Next_Name /= Null_String'Access then
-				Ada.Strings.Unbounded.Free (Object.Reader_Body.Next_Name);
-			end if;
-			if Object.Reader_Body.Next_Value /= Null_String'Access then
-				Ada.Strings.Unbounded.Free (Object.Reader_Body.Next_Value);
-			end if;
-			if Object.Reader_Body.Next_Next_Name /= Sequence_Item_Name'Access then
-				Ada.Strings.Unbounded.Free (Object.Reader_Body.Next_Next_Name);
-			end if;
-			Free (Object.Reader_Body);
-		end if;
-		if Object.Writer_Body /= null then
-			Free (Object.Writer_Body);
-		end if;
-	end Finalize;
 	
 end Serialization.XML;

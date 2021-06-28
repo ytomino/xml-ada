@@ -219,8 +219,6 @@ private
 		Empty_Element); -- have to supplement Element_End
 	pragma Discard_Names (Reader_State);
 	
-	procedure Next (Object : in out Reader);
-	
 	type Parsed_Data_Type is limited record
 		Event : aliased XML.Event;
 		Name_Constraint : aliased String_Constraint;
@@ -242,6 +240,8 @@ private
 		Version : String_Access;
 	end record;
 	pragma Suppress_Initialization (Non_Controlled_Reader);
+	
+	procedure Next (NC_Object : in out Non_Controlled_Reader);
 	
 	package Controlled_Readers is
 		

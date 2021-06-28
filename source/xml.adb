@@ -990,6 +990,8 @@ package body XML is
 		Encoding : Encoding_Type := No_Encoding;
 		Standalone : Standalone_Type := No_Specific)
 	is
+		pragma Check (Pre,
+			Check => not Finished (Object) or else raise Status_Error);
 		procedure Process (NC_Object : in out Non_Controlled_Writer) is
 			Version_Length : C.size_t := 0;
 		begin
@@ -1027,6 +1029,8 @@ package body XML is
 	end Put_Document_Start;
 	
 	procedure Put_Document_End (Object : in out Writer) is
+		pragma Check (Pre,
+			Check => not Finished (Object) or else raise Status_Error);
 		procedure Process (NC_Object : in out Non_Controlled_Writer) is
 		begin
 			Clear_Last_Error;

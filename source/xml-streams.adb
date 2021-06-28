@@ -73,21 +73,24 @@ package body XML.Streams is
 			end if;
 			return Result : Reader do
 				declare
-					NC_Result : Non_Controlled_Reader
-						renames Controlled_Readers.Reference (Result).all;
+					procedure Process (NC_Result : in out Non_Controlled_Reader) is
+					begin
+						NC_Result.Raw :=
+							C.libxml.xmlreader.xmlReaderForIO (
+								Read_Handler'Access,
+								null,
+								C.void_ptr (Conv.To_Address (Conv.Object_Pointer (Stream))),
+								P_URI,
+								P_Encoding,
+								0);
+						if NC_Result.Raw = null then
+							raise Use_Error;
+						end if;
+						Next (NC_Result);
+					end Process;
+					procedure Do_Create is new Controlled_Readers.Update (Process);
 				begin
-					NC_Result.Raw :=
-						C.libxml.xmlreader.xmlReaderForIO (
-							Read_Handler'Access,
-							null,
-							C.void_ptr (Conv.To_Address (Conv.Object_Pointer (Stream))),
-							P_URI,
-							P_Encoding,
-							0);
-					if NC_Result.Raw = null then
-						raise Use_Error;
-					end if;
-					Next (NC_Result);
+					Do_Create (Controlled_Readers.Reader (Result));
 				end;
 			end return;
 		end;
@@ -146,18 +149,21 @@ package body XML.Streams is
 			end if;
 			return Result : Writer do
 				declare
-					NC_Result : Non_Controlled_Writer
-						renames Controlled_Writers.Reference (Result).all;
+					procedure Process (NC_Result : in out Non_Controlled_Writer) is
+					begin
+						NC_Result.Raw := C.libxml.xmlwriter.xmlNewTextWriter (Buffer);
+						if NC_Result.Raw = null then
+							declare
+								Dummy : C.signed_int;
+							begin
+								Dummy := C.libxml.xmlIO.xmlOutputBufferClose (Buffer);
+							end;
+							raise Use_Error;
+						end if;
+					end Process;
+					procedure Do_Create is new Controlled_Writers.Update (Process);
 				begin
-					NC_Result.Raw := C.libxml.xmlwriter.xmlNewTextWriter (Buffer);
-					if NC_Result.Raw = null then
-						declare
-							Dummy : C.signed_int;
-						begin
-							Dummy := C.libxml.xmlIO.xmlOutputBufferClose (Buffer);
-						end;
-						raise Use_Error;
-					end if;
+					Do_Create (Controlled_Writers.Writer (Result));
 				end;
 			end return;
 		end;

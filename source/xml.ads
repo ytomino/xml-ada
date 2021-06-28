@@ -247,13 +247,14 @@ private
 		
 		type Reader is limited private;
 		
-		function Constant_Reference (Object : XML.Reader)
-			return not null access constant Non_Controlled_Reader;
-		function Reference (Object : in out XML.Reader)
-			return not null access Non_Controlled_Reader;
+		generic
+			type Result_Type (<>) is limited private;
+			with function Process (Raw : in Non_Controlled_Reader) return Result_Type;
+		function Query (Object : Reader) return Result_Type;
 		
-		pragma Inline (Constant_Reference);
-		pragma Inline (Reference);
+		generic
+			with procedure Process (Raw : in out Non_Controlled_Reader);
+		procedure Update (Object : in out Reader);
 		
 	private
 		
@@ -281,13 +282,14 @@ private
 		
 		type Writer is limited private;
 		
-		function Constant_Reference (Object : XML.Writer)
-			return not null access constant Non_Controlled_Writer;
-		function Reference (Object : in out XML.Writer)
-			return not null access Non_Controlled_Writer;
+		generic
+			type Result_Type (<>) is limited private;
+			with function Process (Raw : in Non_Controlled_Writer) return Result_Type;
+		function Query (Object : Writer) return Result_Type;
 		
-		pragma Inline (Constant_Reference);
-		pragma Inline (Reference);
+		generic
+			with procedure Process (Raw : in out Non_Controlled_Writer);
+		procedure Update (Object : in out Writer);
 		
 	private
 		

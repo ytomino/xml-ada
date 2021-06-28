@@ -87,8 +87,8 @@ package body XML.Streams is
 					if NC_Result.Raw = null then
 						raise Use_Error;
 					end if;
+					Next (NC_Result);
 				end;
-				Next (Result);
 			end return;
 		end;
 	end Create;

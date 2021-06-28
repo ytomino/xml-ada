@@ -144,16 +144,13 @@ package body XML is
 	end Read_Handler;
 	
 	procedure Read (
-		Object : in out Reader;
-		Parsed_Data : out Parsed_Data_Type)
-	is
-		NC_Object : Non_Controlled_Reader
-			renames Controlled_Readers.Reference (Object).all;
+		NC_Object : in out Non_Controlled_Reader;
+		Parsed_Data : out Parsed_Data_Type) is
 	begin
 		case NC_Object.State is
 			when Next | Remaining =>
 				if NC_Object.State = Remaining then
-					Next (Object);
+					Next (NC_Object);
 				end if;
 				declare
 					Node_Type : constant C.signed_int :=
@@ -340,6 +337,13 @@ package body XML is
 		end case;
 	end Read;
 	
+	procedure Read (Object : in out Reader; Parsed_Data : out Parsed_Data_Type) is
+		NC_Object : Non_Controlled_Reader
+			renames Controlled_Readers.Reference (Object).all;
+	begin
+		Read (NC_Object, Parsed_Data);
+	end Read;
+	
 	-- implementation of reader
 	
 	function Create (
@@ -383,8 +387,8 @@ package body XML is
 					if NC_Result.Raw = null then
 						raise Use_Error;
 					end if;
+					Next (NC_Result);
 				end;
-				Next (Result);
 			end return;
 		end;
 	end Create;
@@ -569,7 +573,7 @@ package body XML is
 			when Next =>
 				null;
 			when Remaining =>
-				Next (Object);
+				Next (NC_Object);
 			when Empty_Element =>
 				raise Data_Error; -- Element_End
 		end case;
@@ -586,9 +590,7 @@ package body XML is
 		end;
 	end Finish;
 	
-	procedure Next (Object : in out Reader) is
-		NC_Object : Non_Controlled_Reader
-			renames Controlled_Readers.Reference (Object).all;
+	procedure Next (NC_Object : in out Non_Controlled_Reader) is
 	begin
 		Clear_Last_Error;
 		if C.libxml.xmlreader.xmlTextReaderRead (NC_Object.Raw) < 0 then
@@ -641,6 +643,13 @@ package body XML is
 		To_Output (context) (Item);
 		return len;
 	end Write_Handler;
+	
+	procedure Flush (NC_Object : in Non_Controlled_Writer) is
+	begin
+		if C.libxml.xmlwriter.xmlTextWriterFlush (NC_Object.Raw) < 0 then
+			raise Use_Error;
+		end if;
+	end Flush;
 	
 	-- for standalone
 	No_Image : constant C.char_array := "no" & C.char'Val (0);
@@ -703,9 +712,7 @@ package body XML is
 		NC_Object : Non_Controlled_Writer
 			renames Controlled_Writers.Constant_Reference (Object).all;
 	begin
-		if C.libxml.xmlwriter.xmlTextWriterFlush (NC_Object.Raw) < 0 then
-			raise Use_Error;
-		end if;
+		Flush (NC_Object);
 	end Flush;
 	
 	procedure Set_Indent (Object : in out Writer; Indent : in Natural) is
@@ -980,7 +987,7 @@ package body XML is
 			renames Controlled_Writers.Reference (Object).all;
 	begin
 		NC_Object.Finished := True;
-		Flush (Object);
+		Flush (NC_Object);
 	end Finish;
 	
 	package body Controlled_Writers is

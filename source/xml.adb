@@ -638,6 +638,9 @@ package body XML is
 	package body Controlled_Readers is
 		
 		function Query (Object : XML.Reader) return Result_Type is
+			function Query (Object : Reader) return Result_Type;
+			pragma Inline (Query);
+			
 			function Query (Object : Reader) return Result_Type is
 			begin
 				return Process (Object.Data);
@@ -647,6 +650,9 @@ package body XML is
 		end Query;
 		
 		procedure Update (Object : in out XML.Reader) is
+			procedure Update (Object : in out Reader);
+			pragma Inline (Update);
+			
 			procedure Update (Object : in out Reader) is
 			begin
 				Process (Object.Data);
@@ -1067,6 +1073,9 @@ package body XML is
 	package body Controlled_Writers is
 		
 		function Query (Object : XML.Writer) return Result_Type is
+			function Query (Object : Writer) return Result_Type;
+			pragma Inline (Query);
+			
 			function Query (Object : Writer) return Result_Type is
 			begin
 				return Process (Object.Data);
@@ -1076,6 +1085,9 @@ package body XML is
 		end Query;
 		
 		procedure Update (Object : in out XML.Writer) is
+			procedure Update (Object : in out Writer);
+			pragma Inline (Update);
+			
 			procedure Update (Object : in out Writer) is
 			begin
 				Process (Object.Data);

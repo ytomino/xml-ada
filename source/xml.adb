@@ -344,7 +344,7 @@ package body XML is
 		end Process;
 		procedure Do_Read is new Controlled_Readers.Update (Process);
 	begin
-		Do_Read (Controlled_Readers.Reader (Object));
+		Do_Read (Object);
 	end Read;
 	
 	-- implementation of reader
@@ -393,7 +393,7 @@ package body XML is
 					end Process;
 					procedure Do_Create is new Controlled_Readers.Update (Process);
 				begin
-					Do_Create (Controlled_Readers.Reader (Result));
+					Do_Create (Result);
 				end;
 			end return;
 		end;
@@ -416,7 +416,7 @@ package body XML is
 		end Process;
 		procedure Do_Set_DTD_Loading is new Controlled_Readers.Update (Process);
 	begin
-		Do_Set_DTD_Loading (Controlled_Readers.Reader (Object));
+		Do_Set_DTD_Loading (Object);
 	end Set_DTD_Loading;
 	
 	procedure Set_Default_Attributes (
@@ -436,7 +436,7 @@ package body XML is
 		end Process;
 		procedure Do_Set_Default_Attributes is new Controlled_Readers.Update (Process);
 	begin
-		Do_Set_Default_Attributes (Controlled_Readers.Reader (Object));
+		Do_Set_Default_Attributes (Object);
 	end Set_Default_Attributes;
 	
 	procedure Set_Validation (
@@ -456,7 +456,7 @@ package body XML is
 		end Process;
 		procedure Do_Set_Validation is new Controlled_Readers.Update (Process);
 	begin
-		Do_Set_Validation (Controlled_Readers.Reader (Object));
+		Do_Set_Validation (Object);
 	end Set_Validation;
 	
 	procedure Set_Substitute_Entities (
@@ -477,7 +477,7 @@ package body XML is
 		procedure Do_Set_Substitute_Entities is
 			new Controlled_Readers.Update (Process);
 	begin
-		Do_Set_Substitute_Entities (Controlled_Readers.Reader (Object));
+		Do_Set_Substitute_Entities (Object);
 	end Set_Substitute_Entities;
 	
 	function Version (Object : Reader) return access constant String is
@@ -506,7 +506,7 @@ package body XML is
 		end Process;
 		procedure Do_Version is new Controlled_Readers.Update (Process);
 	begin
-		Do_Version (Controlled_Readers.Reader (Mutable_Object));
+		Do_Version (Mutable_Object);
 		return Result;
 	end Version;
 	
@@ -520,7 +520,7 @@ package body XML is
 		end Process;
 		function Do_Encoding is new Controlled_Readers.Query (Encoding_Type, Process);
 	begin
-		return Do_Encoding (Controlled_Readers.Reader (Object));
+		return Do_Encoding (Object);
 	end Encoding;
 	
 	function Standalone (Object : Reader) return Standalone_Type is
@@ -537,7 +537,7 @@ package body XML is
 		function Do_Standalone is
 			new Controlled_Readers.Query (Standalone_Type, Process);
 	begin
-		return Do_Standalone (Controlled_Readers.Reader (Object));
+		return Do_Standalone (Object);
 	end Standalone;
 	
 	function Base_URI (Object : Reader) return String is
@@ -549,7 +549,7 @@ package body XML is
 		end Process;
 		function Do_Base_URI is new Controlled_Readers.Query (String, Process);
 	begin
-		return Do_Base_URI (Controlled_Readers.Reader (Object));
+		return Do_Base_URI (Object);
 	end Base_URI;
 	
 	procedure Get (
@@ -624,7 +624,7 @@ package body XML is
 		end Process;
 		procedure Do_Finish is new Controlled_Readers.Update (Process);
 	begin
-		Do_Finish (Controlled_Readers.Reader (Object));
+		Do_Finish (Object);
 	end Finish;
 	
 	procedure Next (NC_Object : in out Non_Controlled_Reader) is
@@ -637,14 +637,22 @@ package body XML is
 	
 	package body Controlled_Readers is
 		
-		function Query (Object : Reader) return Result_Type is
+		function Query (Object : XML.Reader) return Result_Type is
+			function Query (Object : Reader) return Result_Type is
+			begin
+				return Process (Object.Data);
+			end Query;
 		begin
-			return Process (Object.Data);
+			return Query (Reader (Object));
 		end Query;
 		
-		procedure Update (Object : in out Reader) is
+		procedure Update (Object : in out XML.Reader) is
+			procedure Update (Object : in out Reader) is
+			begin
+				Process (Object.Data);
+			end Update;
 		begin
-			Process (Object.Data);
+			Update (Reader (Object));
 		end Update;
 		
 		overriding procedure Finalize (Object : in out Reader) is
@@ -733,7 +741,7 @@ package body XML is
 					end Process;
 					procedure Do_Create is new Controlled_Writers.Update (Process);
 				begin
-					Do_Create (Controlled_Writers.Writer (Result));
+					Do_Create (Result);
 				end;
 			end return;
 		end;
@@ -746,7 +754,7 @@ package body XML is
 		end Process;
 		function Do_Finished is new Controlled_Writers.Query (Boolean, Process);
 	begin
-		return Do_Finished (Controlled_Writers.Writer (Object));
+		return Do_Finished (Object);
 	end Finished;
 	
 	procedure Flush (Object : in out Writer) is
@@ -756,7 +764,7 @@ package body XML is
 		end Process;
 		procedure Do_Flush is new Controlled_Writers.Update (Process);
 	begin
-		Do_Flush (Controlled_Writers.Writer (Object));
+		Do_Flush (Object);
 	end Flush;
 	
 	procedure Set_Indent (Object : in out Writer; Indent : in Natural) is
@@ -771,7 +779,7 @@ package body XML is
 		end Process;
 		procedure Do_Set_Indent is new Controlled_Writers.Update (Process);
 	begin
-		Do_Set_Indent (Controlled_Writers.Writer (Object));
+		Do_Set_Indent (Object);
 	end Set_Indent;
 	
 	procedure Set_Indent (Object : in out Writer; Indent : in String) is
@@ -790,7 +798,7 @@ package body XML is
 		end Process;
 		procedure Do_Set_Indent is new Controlled_Writers.Update (Process);
 	begin
-		Do_Set_Indent (Controlled_Writers.Writer (Object));
+		Do_Set_Indent (Object);
 	end Set_Indent;
 	
 	procedure Put (Object : in out Writer; Event : in XML.Event) is
@@ -981,7 +989,7 @@ package body XML is
 		end Process;
 		procedure Do_Put is new Controlled_Writers.Update (Process);
 	begin
-		Do_Put (Controlled_Writers.Writer (Object));
+		Do_Put (Object);
 	end Put;
 	
 	procedure Put_Document_Start (
@@ -1025,7 +1033,7 @@ package body XML is
 		end Process;
 		procedure Do_Put_Document_Start is new Controlled_Writers.Update (Process);
 	begin
-		Do_Put_Document_Start (Controlled_Writers.Writer (Object));
+		Do_Put_Document_Start (Object);
 	end Put_Document_Start;
 	
 	procedure Put_Document_End (Object : in out Writer) is
@@ -1040,7 +1048,7 @@ package body XML is
 		end Process;
 		procedure Do_Put_Document_End is new Controlled_Writers.Update (Process);
 	begin
-		Do_Put_Document_End (Controlled_Writers.Writer (Object));
+		Do_Put_Document_End (Object);
 	end Put_Document_End;
 	
 	procedure Finish (Object : in out Writer) is
@@ -1053,19 +1061,27 @@ package body XML is
 		end Process;
 		procedure Do_Finish is new Controlled_Writers.Update (Process);
 	begin
-		Do_Finish (Controlled_Writers.Writer (Object));
+		Do_Finish (Object);
 	end Finish;
 	
 	package body Controlled_Writers is
 		
-		function Query (Object : Writer) return Result_Type is
+		function Query (Object : XML.Writer) return Result_Type is
+			function Query (Object : Writer) return Result_Type is
+			begin
+				return Process (Object.Data);
+			end Query;
 		begin
-			return Process (Object.Data);
+			return Query (Writer (Object));
 		end Query;
 		
-		procedure Update (Object : in out Writer) is
+		procedure Update (Object : in out XML.Writer) is
+			procedure Update (Object : in out Writer) is
+			begin
+				Process (Object.Data);
+			end Update;
 		begin
-			Process (Object.Data);
+			Update (Writer (Object));
 		end Update;
 		
 		overriding procedure Finalize (Object : in out Writer) is

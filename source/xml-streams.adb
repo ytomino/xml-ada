@@ -90,7 +90,7 @@ package body XML.Streams is
 					end Process;
 					procedure Do_Create is new Controlled_Readers.Update (Process);
 				begin
-					Do_Create (Controlled_Readers.Reader (Result));
+					Do_Create (Result);
 				end;
 			end return;
 		end;
@@ -163,7 +163,7 @@ package body XML.Streams is
 					end Process;
 					procedure Do_Create is new Controlled_Writers.Update (Process);
 				begin
-					Do_Create (Controlled_Writers.Writer (Result));
+					Do_Create (Result);
 				end;
 			end return;
 		end;

@@ -250,11 +250,11 @@ private
 		generic
 			type Result_Type (<>) is limited private;
 			with function Process (Raw : in Non_Controlled_Reader) return Result_Type;
-		function Query (Object : Reader) return Result_Type;
+		function Query (Object : XML.Reader) return Result_Type;
 		
 		generic
 			with procedure Process (Raw : in out Non_Controlled_Reader);
-		procedure Update (Object : in out Reader);
+		procedure Update (Object : in out XML.Reader);
 		
 	private
 		
@@ -285,11 +285,11 @@ private
 		generic
 			type Result_Type (<>) is limited private;
 			with function Process (Raw : in Non_Controlled_Writer) return Result_Type;
-		function Query (Object : Writer) return Result_Type;
+		function Query (Object : XML.Writer) return Result_Type;
 		
 		generic
 			with procedure Process (Raw : in out Non_Controlled_Writer);
-		procedure Update (Object : in out Writer);
+		procedure Update (Object : in out XML.Writer);
 		
 	private
 		

@@ -199,6 +199,14 @@ package body XML is
 					to => NC_Object.U.Last_Error'Access) < 0);
 	end Reader_Error_Handler;
 	
+	procedure Next (NC_Object : in out Non_Controlled_Reader) is
+	begin
+		Reset_Last_Error (NC_Object);
+		if C.libxml.xmlreader.xmlTextReaderRead (NC_Object.Raw) < 0 then
+			Raise_Last_Error (NC_Object);
+		end if;
+	end Next;
+	
 	procedure Read_Start (NC_Object : in out Non_Controlled_Reader) is
 	begin
 		if NC_Object.State = Start then
@@ -735,14 +743,6 @@ package body XML is
 	begin
 		return Do_Last_Error_Message (Object);
 	end Last_Error_Message;
-	
-	procedure Next (NC_Object : in out Non_Controlled_Reader) is
-	begin
-		Reset_Last_Error (NC_Object);
-		if C.libxml.xmlreader.xmlTextReaderRead (NC_Object.Raw) < 0 then
-			Raise_Last_Error (NC_Object);
-		end if;
-	end Next;
 	
 	procedure Install_Error_Handler (
 		NC_Object : aliased in out Non_Controlled_Reader)

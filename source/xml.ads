@@ -261,8 +261,6 @@ private
 	end record;
 	pragma Suppress_Initialization (Non_Controlled_Reader);
 	
-	procedure Next (NC_Object : in out Non_Controlled_Reader);
-	
 	procedure Install_Error_Handler (
 		NC_Object : aliased in out Non_Controlled_Reader);
 	procedure Reset_Last_Error (NC_Object : in out Non_Controlled_Reader);

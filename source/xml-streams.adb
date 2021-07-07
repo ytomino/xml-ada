@@ -87,7 +87,6 @@ package body XML.Streams is
 						raise Use_Error;
 					end if;
 					Install_Error_Handler (NC_Result);
-					Next (NC_Result);
 				end;
 			end return;
 		end;

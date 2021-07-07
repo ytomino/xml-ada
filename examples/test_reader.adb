@@ -440,7 +440,9 @@ procedure test_reader is
 					when 3 =>
 						argv_i := argv3 (argv3'First)'Access;
 				end case;
-				readerPtr := C.libxml.xmlreader.xmlReaderForFile (argv_i, null, 0);
+				if C.libxml.xmlreader.xmlReaderNewFile (readerPtr, argv_i, null, 0) < 0 then
+					raise Program_Error;
+				end if;
 				if null = readerPtr then
 					fputs (argv_i, C.stdio.stderr);
 					fputs (

@@ -164,6 +164,9 @@ package XML is
 	
 	procedure Finish (Object : in out Reader);
 	
+	function Last_Error_Line (Object : Reader) return Natural;
+	function Last_Error_Message (Object : Reader) return String;
+	
 	-- writer
 	
 	type Writer (<>) is limited private;

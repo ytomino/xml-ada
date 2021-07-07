@@ -109,6 +109,9 @@ package XML is
 	type Parsing_Entry_Type is limited private;
 	pragma Preelaborable_Initialization (Parsing_Entry_Type);
 	
+	function Is_Assigned (Parsing_Entry : Parsing_Entry_Type) return Boolean;
+	pragma Inline (Is_Assigned);
+	
 	type Event_Reference_Type (
 		Element : not null access constant Event) is null record
 		with Implicit_Dereference => Element;
@@ -225,7 +228,10 @@ private
 	pragma Suppress_Initialization (Parsed_Data_Type);
 	
 	type Parsing_Entry_Type is limited record -- may be controlled type
+		-- uninitialized
 		Data : aliased Parsed_Data_Type;
+		-- initialized
+		Assigned : Boolean := False;
 	end record;
 	
 	type Reader_State is (

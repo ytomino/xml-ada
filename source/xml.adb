@@ -707,6 +707,35 @@ package body XML is
 		Do_Finish (Object);
 	end Finish;
 	
+	function Last_Error_Line (Object : Reader) return Natural is
+		function Process (NC_Object : Non_Controlled_Reader) return Natural is
+			Line : Natural := 0;
+		begin
+			if NC_Object.Error then
+				Line := Integer (NC_Object.U.Last_Error.line - 1);
+			end if;
+			return Line;
+		end Process;
+		function Do_Last_Error_Line is new Controlled_Readers.Query (Natural, Process);
+	begin
+		return Do_Last_Error_Line (Object);
+	end Last_Error_Line;
+	
+	function Last_Error_Message (Object : Reader) return String is
+		function Process (NC_Object : Non_Controlled_Reader) return String is
+			Message : C.char_const_ptr := null;
+		begin
+			if NC_Object.Error then
+				Message := C.char_const_ptr (NC_Object.U.Last_Error.message);
+			end if;
+			return To_String_Without_LF (Message);
+		end Process;
+		function Do_Last_Error_Message is
+			new Controlled_Readers.Query (String, Process);
+	begin
+		return Do_Last_Error_Message (Object);
+	end Last_Error_Message;
+	
 	procedure Next (NC_Object : in out Non_Controlled_Reader) is
 	begin
 		Reset_Last_Error (NC_Object);

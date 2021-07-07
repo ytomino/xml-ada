@@ -1,11 +1,10 @@
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
-with System;
+with System.Address_To_Access_Conversions;
 with C.string;
 with C.libxml.globals;
 with C.libxml.parser;
 with C.libxml.tree;
-with C.libxml.xmlerror;
 with C.libxml.xmlIO;
 with C.libxml.xmlmemory;
 with C.libxml.xmlstring;
@@ -18,7 +17,6 @@ package body XML is
 	use type C.libxml.encoding.xmlCharEncodingHandlerPtr;
 	use type C.libxml.xmlstring.xmlChar_const_ptr;
 	use type C.libxml.tree.xmlOutputBufferPtr;
-	use type C.libxml.xmlerror.xmlErrorPtr;
 	use type C.libxml.xmlreader.xmlTextReaderPtr;
 	use type C.libxml.xmlwriter.xmlTextWriterPtr;
 	
@@ -26,6 +24,11 @@ package body XML is
 	
 	procedure memcpy (dst, src : System.Address; n : C.size_t)
 		with Import, Convention => Intrinsic, External_Name => "__builtin_memcpy";
+	procedure memset (
+		s : System.Address;
+		c : Standard.C.signed_int;
+		n : Standard.C.size_t)
+		with Import, Convention => Intrinsic, External_Name => "__builtin_memset";
 	
 	type xmlChar_array is
 		array (C.size_t range <>) of aliased C.libxml.xmlstring.xmlChar
@@ -143,6 +146,32 @@ package body XML is
 		return C.signed_int (Last);
 	end Read_Handler;
 	
+	procedure Reader_Error_Handler (
+		userData : C.void_ptr;
+		error : access C.libxml.xmlerror.xmlError)
+		with Convention => C;
+	
+	procedure Reader_Error_Handler (
+		userData : C.void_ptr;
+		error : access C.libxml.xmlerror.xmlError)
+	is
+		package Conv is
+			new System.Address_To_Access_Conversions (Non_Controlled_Reader);
+		NC_Object : Non_Controlled_Reader
+			renames Conv.To_Pointer (System.Address (userData)).all;
+	begin
+		if NC_Object.Error then
+			C.libxml.xmlerror.xmlResetError (NC_Object.U.Last_Error'Access);
+		else
+			memset (NC_Object.U.Last_Error'Address, 0, C.libxml.xmlerror.xmlError'Size / Standard'Storage_Unit);
+		end if;
+		NC_Object.Error :=
+			not (
+				C.libxml.xmlerror.xmlCopyError (
+					from => error,
+					to => NC_Object.U.Last_Error'Access) < 0);
+	end Reader_Error_Handler;
+	
 	procedure Read (
 		NC_Object : in out Non_Controlled_Reader;
 		Parsed_Data : out Parsed_Data_Type) is
@@ -157,7 +186,7 @@ package body XML is
 						C.libxml.xmlreader.xmlTextReaderNodeType (NC_Object.Raw);
 				begin
 					if Node_Type < 0 then
-						Raise_Last_Error;
+						Raise_Last_Error (NC_Object);
 					else
 						case Node_Type is
 							when C.libxml.xmlreader.xmlReaderTypes'Enum_Rep (
@@ -187,20 +216,20 @@ package body XML is
 												Value'Unrestricted_Access,
 												Parsed_Data.Value_Constraint'Access));
 								end;
-								Clear_Last_Error;
+								Reset_Last_Error (NC_Object);
 								declare
 									Moved : constant C.signed_int :=
 										C.libxml.xmlreader.xmlTextReaderMoveToNextAttribute (NC_Object.Raw);
 								begin
 									if Moved < 0 then
-										Raise_Last_Error;
+										Raise_Last_Error (NC_Object);
 									elsif Moved > 0 then
 										NC_Object.State := Next; -- more attributes
 									else
 										-- end of attributes
-										Clear_Last_Error;
+										Reset_Last_Error (NC_Object);
 										if C.libxml.xmlreader.xmlTextReaderMoveToElement (NC_Object.Raw) < 0 then
-											Raise_Last_Error;
+											Raise_Last_Error (NC_Object);
 										end if;
 										if C.libxml.xmlreader.xmlTextReaderIsEmptyElement (NC_Object.Raw) > 0 then
 											NC_Object.State := Empty_Element;
@@ -226,11 +255,11 @@ package body XML is
 								end;
 								if C.libxml.xmlreader.xmlTextReaderHasAttributes (NC_Object.Raw) > 0 then
 									NC_Object.State := Next;
-									Clear_Last_Error;
+									Reset_Last_Error (NC_Object);
 									if C.libxml.xmlreader.xmlTextReaderMoveToFirstAttribute (
 										NC_Object.Raw) < 0
 									then
-										Raise_Last_Error;
+										Raise_Last_Error (NC_Object);
 									end if;
 								elsif C.libxml.xmlreader.xmlTextReaderIsEmptyElement (NC_Object.Raw) > 0 then
 									NC_Object.State := Empty_Element;
@@ -373,7 +402,6 @@ package body XML is
 		function To_void_ptr is new Ada.Unchecked_Conversion (I, C.void_ptr);
 	begin
 		Check_Version;
-		Install_Error_Handlers;
 		declare
 			P_Encoding : C.char_const_ptr := null;
 			P_URI : access constant C.char := null;
@@ -388,26 +416,24 @@ package body XML is
 				C_URI (URI_Length) := C.char'Val (0);
 				P_URI := C_URI (C_URI'First)'Access;
 			end if;
-			return Result : Reader do
+			return Result : aliased Reader do
 				declare
-					procedure Process (NC_Result : in out Non_Controlled_Reader) is
-					begin
-						NC_Result.Raw :=
-							C.libxml.xmlreader.xmlReaderForIO (
-								Read_Handler'Access,
-								null,
-								To_void_ptr (Input),
-								P_URI,
-								P_Encoding,
-								0);
-						if NC_Result.Raw = null then
-							raise Use_Error;
-						end if;
-						Next (NC_Result);
-					end Process;
-					procedure Do_Create is new Controlled_Readers.Update (Process);
+					NC_Result : Non_Controlled_Reader
+						renames Controlled_Readers.Reference (Result).all;
 				begin
-					Do_Create (Result);
+					NC_Result.Raw :=
+						C.libxml.xmlreader.xmlReaderForIO (
+							Read_Handler'Access,
+							null,
+							To_void_ptr (Input),
+							P_URI,
+							P_Encoding,
+							0);
+					if NC_Result.Raw = null then
+						raise Use_Error;
+					end if;
+					Install_Error_Handler (NC_Result);
+					Next (NC_Result);
 				end;
 			end return;
 		end;
@@ -641,13 +667,60 @@ package body XML is
 	
 	procedure Next (NC_Object : in out Non_Controlled_Reader) is
 	begin
-		Clear_Last_Error;
+		Reset_Last_Error (NC_Object);
 		if C.libxml.xmlreader.xmlTextReaderRead (NC_Object.Raw) < 0 then
-			Raise_Last_Error;
+			Raise_Last_Error (NC_Object);
 		end if;
 	end Next;
 	
+	procedure Install_Error_Handler (
+		NC_Object : aliased in out Non_Controlled_Reader)
+	is
+		package Conv is
+			new System.Address_To_Access_Conversions (Non_Controlled_Reader);
+	begin
+		C.libxml.xmlreader.xmlTextReaderSetStructuredErrorHandler (
+			NC_Object.Raw,
+			Reader_Error_Handler'Access,
+			C.void_ptr (Conv.To_Address (NC_Object'Access)));
+	end Install_Error_Handler;
+	
+	procedure Reset_Last_Error (NC_Object : in out Non_Controlled_Reader) is
+	begin
+		if NC_Object.Error then
+			NC_Object.Error := False;
+			C.libxml.xmlerror.xmlResetError (NC_Object.U.Last_Error'Access);
+		end if;
+	end Reset_Last_Error;
+	
+	procedure Raise_Last_Error (NC_Object : in Non_Controlled_Reader) is
+	begin
+		if not NC_Object.Error then
+			raise Use_Error; -- API reported a failure, but did not callbacked
+		else
+			Raise_Error (NC_Object.U.Last_Error'Access);
+		end if;
+	end Raise_Last_Error;
+	
 	package body Controlled_Readers is
+		
+		function Reference (Object : aliased in out Reader)
+			return not null access Non_Controlled_Reader;
+		pragma Inline (Reference);
+		
+		function Reference (Object : aliased in out Reader)
+			return not null access Non_Controlled_Reader is
+		begin
+			return Object.Data'Access;
+		end Reference;
+		
+		-- implementation
+		
+		function Reference (Object : aliased in out XML.Reader)
+			return not null access Non_Controlled_Reader is
+		begin
+			return Reference (Reader (Object));
+		end Reference;
 		
 		function Query (Object : XML.Reader) return Result_Type is
 			function Query (Object : Reader) return Result_Type;
@@ -677,6 +750,9 @@ package body XML is
 		begin
 			C.libxml.xmlreader.xmlFreeTextReader (Object.Data.Raw);
 			Free (Object.Data.Version);
+			if Object.Data.Error then
+				C.libxml.xmlerror.xmlResetError (Object.Data.U.Last_Error'Access);
+			end if;
 		end Finalize;
 		
 	end Controlled_Readers;
@@ -744,7 +820,6 @@ package body XML is
 		function To_void_ptr is new Ada.Unchecked_Conversion (O, C.void_ptr);
 	begin
 		Check_Version;
-		Install_Error_Handlers;
 		declare
 			Buffer : constant C.libxml.tree.xmlOutputBufferPtr :=
 				C.libxml.xmlIO.xmlOutputBufferCreateIO (
@@ -849,12 +924,12 @@ package body XML is
 					begin
 						memcpy (C_Name'Address, Name'Address, Name_Length);
 						C_Name (Name_Length) := C.libxml.xmlstring.xmlChar'Val (0);
-						Clear_Last_Error;
+						C.libxml.xmlerror.xmlResetLastError;
 						if C.libxml.xmlwriter.xmlTextWriterStartElement (
 							NC_Object.Raw,
 							C_Name (C_Name'First)'Access) < 0
 						then
-							Raise_Last_Error;
+							Raise_Error (C.libxml.xmlerror.xmlGetLastError);
 						end if;
 					end;
 				when Attribute =>
@@ -872,13 +947,13 @@ package body XML is
 						C_Name (Name_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 						memcpy (C_Value'Address, Value'Address, Value_Length);
 						C_Value (Value_Length) := C.libxml.xmlstring.xmlChar'Val (0);
-						Clear_Last_Error;
+						C.libxml.xmlerror.xmlResetLastError;
 						if C.libxml.xmlwriter.xmlTextWriterWriteAttribute (
 							NC_Object.Raw,
 							C_Name (C_Name'First)'Access,
 							C_Value (C_Value'First)'Access) < 0
 						then
-							Raise_Last_Error;
+							Raise_Error (C.libxml.xmlerror.xmlGetLastError);
 						end if;
 					end;
 				when Text =>
@@ -890,12 +965,12 @@ package body XML is
 					begin
 						memcpy (C_Content'Address, Content'Address, Content_Length);
 						C_Content (Content_Length) := C.libxml.xmlstring.xmlChar'Val (0);
-						Clear_Last_Error;
+						C.libxml.xmlerror.xmlResetLastError;
 						if C.libxml.xmlwriter.xmlTextWriterWriteString (
 							NC_Object.Raw,
 							C_Content (C_Content'First)'Access) < 0
 						then
-							Raise_Last_Error;
+							Raise_Error (C.libxml.xmlerror.xmlGetLastError);
 						end if;
 					end;
 				when CDATA =>
@@ -907,12 +982,12 @@ package body XML is
 					begin
 						memcpy (C_Content'Address, Content'Address, Content_Length);
 						C_Content (Content_Length) := C.libxml.xmlstring.xmlChar'Val (0);
-						Clear_Last_Error;
+						C.libxml.xmlerror.xmlResetLastError;
 						if C.libxml.xmlwriter.xmlTextWriterWriteCDATA (
 							NC_Object.Raw,
 							C_Content (C_Content'First)'Access) < 0
 						then
-							Raise_Last_Error;
+							Raise_Error (C.libxml.xmlerror.xmlGetLastError);
 						end if;
 					end;
 				when Entity_Reference =>
@@ -930,12 +1005,12 @@ package body XML is
 					begin
 						memcpy (C_Content'Address, Content'Address, Content_Length);
 						C_Content (Content_Length) := C.libxml.xmlstring.xmlChar'Val (0);
-						Clear_Last_Error;
+						C.libxml.xmlerror.xmlResetLastError;
 						if C.libxml.xmlwriter.xmlTextWriterWriteComment (
 							NC_Object.Raw,
 							C_Content (C_Content'First)'Access) < 0
 						then
-							Raise_Last_Error;
+							Raise_Error (C.libxml.xmlerror.xmlGetLastError);
 						end if;
 					end;
 				when Document =>
@@ -987,7 +1062,7 @@ package body XML is
 								C_Subset (Subset_Length) := C.libxml.xmlstring.xmlChar'Val (0);
 								P_Subset := C_Subset (C_Subset'First)'Access;
 							end if;
-							Clear_Last_Error;
+							C.libxml.xmlerror.xmlResetLastError;
 							if C.libxml.xmlwriter.xmlTextWriterWriteDocType (
 								NC_Object.Raw,
 								C_Name (C_Name'First)'Access,
@@ -995,7 +1070,7 @@ package body XML is
 								P_System_Id,
 								P_Subset) < 0
 							then
-								Raise_Last_Error;
+								Raise_Error (C.libxml.xmlerror.xmlGetLastError);
 							end if;
 						end;
 					end;
@@ -1008,9 +1083,9 @@ package body XML is
 				when Significant_Whitespace =>
 					raise Program_Error; -- unimplemented
 				when Element_End =>
-					Clear_Last_Error;
+					C.libxml.xmlerror.xmlResetLastError;
 					if C.libxml.xmlwriter.xmlTextWriterEndElement (NC_Object.Raw) < 0 then
-						Raise_Last_Error;
+						Raise_Error (C.libxml.xmlerror.xmlGetLastError);
 					end if;
 				when Entity_End =>
 					raise Program_Error; -- unimplemented
@@ -1051,14 +1126,14 @@ package body XML is
 				if Encoding /= null then
 					P_Encoding := Encoding.name;
 				end if;
-				Clear_Last_Error;
+				C.libxml.xmlerror.xmlResetLastError;
 				if C.libxml.xmlwriter.xmlTextWriterStartDocument (
 					NC_Object.Raw,
 					P_Version,
 					P_Encoding,
 					Standalone_Image (Standalone)) < 0
 				then
-					Raise_Last_Error;
+					Raise_Error (C.libxml.xmlerror.xmlGetLastError);
 				end if;
 			end;
 		end Process;
@@ -1072,9 +1147,9 @@ package body XML is
 			Check => not Finished (Object) or else raise Status_Error);
 		procedure Process (NC_Object : in out Non_Controlled_Writer) is
 		begin
-			Clear_Last_Error;
+			C.libxml.xmlerror.xmlResetLastError;
 			if C.libxml.xmlwriter.xmlTextWriterEndDocument (NC_Object.Raw) < 0 then
-				Raise_Last_Error;
+				Raise_Error (C.libxml.xmlerror.xmlGetLastError);
 			end if;
 		end Process;
 		procedure Do_Put_Document_End is new Controlled_Writers.Update (Process);
@@ -1128,42 +1203,9 @@ package body XML is
 		
 	end Controlled_Writers;
 	
-	-- exceptions
-	
-	Error_Handler_Installed : Boolean := False;
-	
-	procedure Structured_Error_Handler (
-		userData : C.void_ptr;
-		error : access C.libxml.xmlerror.xmlError)
-		with Convention => C;
-	
-	procedure Structured_Error_Handler (
-		userData : C.void_ptr;
-		error : access C.libxml.xmlerror.xmlError) is
-	begin
-		null; -- suppress fprintf
-	end Structured_Error_Handler;
-	
 	-- implementation of exceptions
 	
-	procedure Install_Error_Handlers is
-	begin
-		if not Error_Handler_Installed then
-			Error_Handler_Installed := True;
-			C.libxml.xmlerror.xmlSetStructuredErrorFunc (
-				C.void_ptr (System.Null_Address),
-				Structured_Error_Handler'Access);
-		end if;
-	end Install_Error_Handlers;
-	
-	procedure Clear_Last_Error is
-	begin
-		C.libxml.xmlerror.xmlResetLastError;
-	end Clear_Last_Error;
-	
-	procedure Raise_Last_Error is
-		Error : constant C.libxml.xmlerror.xmlErrorPtr :=
-			C.libxml.xmlerror.xmlGetLastError;
+	procedure Raise_Error (Error : access constant C.libxml.xmlerror.xmlError) is
 		function Location return String is
 		begin
 			if Error.line = 0 then
@@ -1187,6 +1229,6 @@ package body XML is
 					raise Data_Error with Location & To_String (Error.message);
 			end case;
 		end if;
-	end Raise_Last_Error;
+	end Raise_Error;
 	
 end XML;

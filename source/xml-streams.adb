@@ -56,7 +56,6 @@ package body XML.Streams is
 			new System.Address_To_Access_Conversions (Ada.Streams.Root_Stream_Type'Class);
 	begin
 		Check_Version;
-		Install_Error_Handlers;
 		declare
 			P_Encoding : C.char_const_ptr := null;
 			P_URI : access constant C.char := null;
@@ -71,26 +70,24 @@ package body XML.Streams is
 				C_URI (URI_Length) := C.char'Val (0);
 				P_URI := C_URI (C_URI'First)'Access;
 			end if;
-			return Result : Reader do
+			return Result : aliased Reader do
 				declare
-					procedure Process (NC_Result : in out Non_Controlled_Reader) is
-					begin
-						NC_Result.Raw :=
-							C.libxml.xmlreader.xmlReaderForIO (
-								Read_Handler'Access,
-								null,
-								C.void_ptr (Conv.To_Address (Conv.Object_Pointer (Stream))),
-								P_URI,
-								P_Encoding,
-								0);
-						if NC_Result.Raw = null then
-							raise Use_Error;
-						end if;
-						Next (NC_Result);
-					end Process;
-					procedure Do_Create is new Controlled_Readers.Update (Process);
+					NC_Result : Non_Controlled_Reader
+						renames Controlled_Readers.Reference (Result).all;
 				begin
-					Do_Create (Result);
+					NC_Result.Raw :=
+						C.libxml.xmlreader.xmlReaderForIO (
+							Read_Handler'Access,
+							null,
+							C.void_ptr (Conv.To_Address (Conv.Object_Pointer (Stream))),
+							P_URI,
+							P_Encoding,
+							0);
+					if NC_Result.Raw = null then
+						raise Use_Error;
+					end if;
+					Install_Error_Handler (NC_Result);
+					Next (NC_Result);
 				end;
 			end return;
 		end;
@@ -135,7 +132,6 @@ package body XML.Streams is
 			new System.Address_To_Access_Conversions (Ada.Streams.Root_Stream_Type'Class);
 	begin
 		Check_Version;
-		Install_Error_Handlers;
 		declare
 			Buffer : constant C.libxml.tree.xmlOutputBufferPtr :=
 				C.libxml.xmlIO.xmlOutputBufferCreateIO (

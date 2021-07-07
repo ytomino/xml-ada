@@ -33,6 +33,7 @@ package body XML is
 	type xmlChar_array is
 		array (C.size_t range <>) of aliased C.libxml.xmlstring.xmlChar
 		with Convention => C;
+	pragma Suppress_Initialization (xmlChar_array);
 	
 	function To_char_const_ptr is
 		new Ada.Unchecked_Conversion (

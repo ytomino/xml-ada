@@ -712,6 +712,19 @@ package body XML is
 		end if;
 	end Flush;
 	
+	procedure Check_No_Zero (S : in String) is
+	begin
+		-- one of the design problems of libxml2,
+		-- it uses zero-terminated strings.
+		-- user's data may be lost if the data contains '\0', check it here.
+		if System.Address (
+				C.string.memchr (C.void_const_ptr (S'Address), 0, S'Length)) /=
+			System.Null_Address
+		then
+			raise Constraint_Error;
+		end if;
+	end Check_No_Zero;
+	
 	-- for standalone
 	No_Image : constant C.char_array := "no" & C.char'Val (0);
 	Yes_Image : constant C.char_array := "yes" & C.char'Val (0);
@@ -1175,18 +1188,5 @@ package body XML is
 			end case;
 		end if;
 	end Raise_Last_Error;
-	
-	procedure Check_No_Zero (S : in String) is
-	begin
-		-- one of the design problems of libxml2,
-		-- it uses zero-terminated strings.
-		-- user's data may be lost if the data contains '\0', check it here.
-		if System.Address (
-				C.string.memchr (C.void_const_ptr (S'Address), 0, S'Length)) /=
-			System.Null_Address
-		then
-			raise Constraint_Error;
-		end if;
-	end Check_No_Zero;
 	
 end XML;

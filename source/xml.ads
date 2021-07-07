@@ -323,6 +323,4 @@ private
 	procedure Raise_Last_Error;
 	pragma No_Return (Raise_Last_Error);
 	
-	procedure Check_No_Zero (S : in String);
-	
 end XML;

@@ -1,6 +1,7 @@
 with Ada.IO_Exceptions;
 private with Ada.Finalization;
 private with C.libxml.encoding;
+private with C.libxml.xmlerror;
 private with C.libxml.xmlreader;
 private with C.libxml.xmlwriter;
 package XML is
@@ -240,18 +241,36 @@ private
 		Empty_Element); -- have to supplement Element_End
 	pragma Discard_Names (Reader_State);
 	
+	type Uninitialized_Non_Controlled_Reader is limited record
+		Last_Error : aliased C.libxml.xmlerror.xmlError;
+	end record;
+	pragma Suppress_Initialization (Uninitialized_Non_Controlled_Reader);
+	
 	type Non_Controlled_Reader is limited record
+		-- uninitialized
+		U : Uninitialized_Non_Controlled_Reader;
+		-- initialized by Controlled_Readers.Reader
 		Raw : C.libxml.xmlreader.xmlTextReaderPtr;
 		State : Reader_State;
+		Error : Boolean;
 		Version : String_Access;
 	end record;
 	pragma Suppress_Initialization (Non_Controlled_Reader);
 	
 	procedure Next (NC_Object : in out Non_Controlled_Reader);
 	
+	procedure Install_Error_Handler (
+		NC_Object : aliased in out Non_Controlled_Reader);
+	procedure Reset_Last_Error (NC_Object : in out Non_Controlled_Reader);
+	procedure Raise_Last_Error (NC_Object : in Non_Controlled_Reader);
+	
 	package Controlled_Readers is
 		
 		type Reader is limited private;
+		
+		function Reference (Object : aliased in out XML.Reader)
+			return not null access Non_Controlled_Reader;
+		pragma Inline (Reference);
 		
 		generic
 			type Result_Type (<>) is limited private;
@@ -269,7 +288,7 @@ private
 		type Reader is new Ada.Finalization.Limited_Controlled
 			with record
 				Data : aliased Non_Controlled_Reader :=
-					(Raw => null, State => Next, Version => null);
+					(U => <>, Raw => null, State => Next, Error => False, Version => null);
 			end record;
 		
 		overriding procedure Finalize (Object : in out Reader);
@@ -317,10 +336,7 @@ private
 	
 	-- exceptions
 	
-	procedure Install_Error_Handlers;
-	
-	procedure Clear_Last_Error;
-	procedure Raise_Last_Error;
-	pragma No_Return (Raise_Last_Error);
+	procedure Raise_Error (Error : access constant C.libxml.xmlerror.xmlError);
+	pragma No_Return (Raise_Error);
 	
 end XML;

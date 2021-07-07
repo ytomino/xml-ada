@@ -240,7 +240,7 @@ private
 		Empty_Element); -- have to supplement Element_End
 	pragma Discard_Names (Reader_State);
 	
-	type Non_Controlled_Reader is record
+	type Non_Controlled_Reader is limited record
 		Raw : C.libxml.xmlreader.xmlTextReaderPtr;
 		State : Reader_State;
 		Version : String_Access;
@@ -280,7 +280,7 @@ private
 	
 	-- writer
 	
-	type Non_Controlled_Writer is record
+	type Non_Controlled_Writer is limited record
 		Raw : C.libxml.xmlwriter.xmlTextWriterPtr := null;
 		Finished : Boolean := False;
 	end record;

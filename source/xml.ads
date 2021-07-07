@@ -143,11 +143,11 @@ package XML is
 		Object : in out Reader;
 		Value : in Boolean);
 	
-	function Version (Object : Reader) return access constant String;
-	function Encoding (Object : Reader) return Encoding_Type;
-	function Standalone (Object : Reader) return Standalone_Type;
+	function Version (Object : in out Reader) return access constant String;
+	function Encoding (Object : in out Reader) return Encoding_Type;
+	function Standalone (Object : in out Reader) return Standalone_Type;
 	
-	function Base_URI (Object : Reader) return String;
+	function Base_URI (Object : in out Reader) return String;
 	
 	procedure Get (
 		Object : in out Reader;
@@ -237,6 +237,7 @@ private
 	
 	type Reader_State is (
 		Next,
+		Start,
 		Remaining,
 		Empty_Element); -- have to supplement Element_End
 	pragma Discard_Names (Reader_State);
@@ -288,7 +289,7 @@ private
 		type Reader is new Ada.Finalization.Limited_Controlled
 			with record
 				Data : aliased Non_Controlled_Reader :=
-					(U => <>, Raw => null, State => Next, Error => False, Version => null);
+					(U => <>, Raw => null, State => Start, Error => False, Version => null);
 			end record;
 		
 		overriding procedure Finalize (Object : in out Reader);

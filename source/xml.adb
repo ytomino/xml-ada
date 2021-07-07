@@ -172,13 +172,21 @@ package body XML is
 					to => NC_Object.U.Last_Error'Access) < 0);
 	end Reader_Error_Handler;
 	
+	procedure Read_Start (NC_Object : in out Non_Controlled_Reader) is
+	begin
+		if NC_Object.State = Start then
+			Next (NC_Object);
+			NC_Object.State := Next;
+		end if;
+	end Read_Start;
+	
 	procedure Read (
 		NC_Object : in out Non_Controlled_Reader;
 		Parsed_Data : out Parsed_Data_Type) is
 	begin
 		case NC_Object.State is
-			when Next | Remaining =>
-				if NC_Object.State = Remaining then
+			when Next | Start | Remaining =>
+				if NC_Object.State /= Next then
 					Next (NC_Object);
 				end if;
 				declare
@@ -433,7 +441,6 @@ package body XML is
 						raise Use_Error;
 					end if;
 					Install_Error_Handler (NC_Result);
-					Next (NC_Result);
 				end;
 			end return;
 		end;
@@ -520,13 +527,12 @@ package body XML is
 		Do_Set_Substitute_Entities (Object);
 	end Set_Substitute_Entities;
 	
-	function Version (Object : Reader) return access constant String is
-		Mutable_Object : Reader
-			renames Object'Unrestricted_Access.all;
+	function Version (Object : in out Reader) return access constant String is
 		Result : access constant String;
 		procedure Process (NC_Object : in out Non_Controlled_Reader) is
 		begin
 			if NC_Object.Version = null then
+				Read_Start (NC_Object);
 				declare
 					C_Version : constant C.libxml.xmlstring.xmlChar_const_ptr :=
 						C.libxml.xmlreader.xmlTextReaderConstXmlVersion (NC_Object.Raw);
@@ -546,50 +552,59 @@ package body XML is
 		end Process;
 		procedure Do_Version is new Controlled_Readers.Update (Process);
 	begin
-		Do_Version (Mutable_Object);
+		Do_Version (Object);
 		return Result;
 	end Version;
 	
-	function Encoding (Object : Reader) return Encoding_Type is
-		function Process (NC_Object : Non_Controlled_Reader) return Encoding_Type is
+	function Encoding (Object : in out Reader) return Encoding_Type is
+		Result : Encoding_Type;
+		procedure Process (NC_Object : in out Non_Controlled_Reader) is
 		begin
-			return Encoding_Type (
+			Read_Start (NC_Object);
+			Result := Encoding_Type (
 				C.libxml.encoding.xmlFindCharEncodingHandler (
 					To_char_const_ptr (
 						C.libxml.xmlreader.xmlTextReaderConstEncoding (NC_Object.Raw))));
 		end Process;
-		function Do_Encoding is new Controlled_Readers.Query (Encoding_Type, Process);
+		procedure Do_Encoding is new Controlled_Readers.Update (Process);
 	begin
-		return Do_Encoding (Object);
+		Do_Encoding (Object);
+		return Result;
 	end Encoding;
 	
-	function Standalone (Object : Reader) return Standalone_Type is
-		function Process (NC_Object : Non_Controlled_Reader) return Standalone_Type is
-			Result : constant C.signed_int :=
-				C.libxml.xmlreader.xmlTextReaderStandalone (NC_Object.Raw);
+	function Standalone (Object : in out Reader) return Standalone_Type is
+		Result : Standalone_Type;
+		procedure Process (NC_Object : in out Non_Controlled_Reader) is
 		begin
-			if Result < -1 then
-				return No_Specific; -- undocumented error
-			else
-				return Standalone_Type'Enum_Val (Result);
-			end if;
+			Read_Start (NC_Object);
+			declare
+				Standalone_Value : constant C.signed_int :=
+					C.libxml.xmlreader.xmlTextReaderStandalone (NC_Object.Raw);
+			begin
+				if Standalone_Value < -1 then
+					Result := No_Specific; -- undocumented error
+				else
+					Result := Standalone_Type'Enum_Val (Standalone_Value);
+				end if;
+			end;
 		end Process;
-		function Do_Standalone is
-			new Controlled_Readers.Query (Standalone_Type, Process);
+		procedure Do_Standalone is new Controlled_Readers.Update (Process);
 	begin
-		return Do_Standalone (Object);
+		Do_Standalone (Object);
+		return Result;
 	end Standalone;
 	
-	function Base_URI (Object : Reader) return String is
-		function Process (NC_Object : Non_Controlled_Reader) return String is
+	function Base_URI (Object : in out Reader) return String is
+		Result : C.libxml.xmlstring.xmlChar_const_ptr;
+		procedure Process (NC_Object : in out Non_Controlled_Reader) is
 		begin
-			return To_String (
-				To_char_const_ptr (
-					C.libxml.xmlreader.xmlTextReaderConstBaseUri (NC_Object.Raw)));
+			Read_Start (NC_Object);
+			Result := C.libxml.xmlreader.xmlTextReaderConstBaseUri (NC_Object.Raw);
 		end Process;
-		function Do_Base_URI is new Controlled_Readers.Query (String, Process);
+		procedure Do_Base_URI is new Controlled_Readers.Update (Process);
 	begin
-		return Do_Base_URI (Object);
+		Do_Base_URI (Object);
+		return To_String (To_char_const_ptr (Result));
 	end Base_URI;
 	
 	procedure Get (
@@ -643,7 +658,7 @@ package body XML is
 			case NC_Object.State is
 				when Next =>
 					null;
-				when Remaining =>
+				when Start | Remaining =>
 					Next (NC_Object);
 				when Empty_Element =>
 					raise Data_Error; -- Element_End

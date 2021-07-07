@@ -349,8 +349,16 @@ package body XML is
 	
 	-- implementation of reader
 	
+	function Is_Assigned (Parsing_Entry : Parsing_Entry_Type) return Boolean is
+	begin
+		return Parsing_Entry.Assigned;
+	end Is_Assigned;
+	
 	function Value (Parsing_Entry : aliased Parsing_Entry_Type)
-		return Event_Reference_Type is
+		return Event_Reference_Type
+	is
+		pragma Check (Pre,
+			Check => Is_Assigned (Parsing_Entry) or else raise Status_Error);
 	begin
 		return (Element => Parsing_Entry.Data.Event'Access);
 	end Value;
@@ -570,9 +578,13 @@ package body XML is
 	
 	procedure Get (
 		Object : in out Reader;
-		Parsing_Entry : out Parsing_Entry_Type) is
+		Parsing_Entry : out Parsing_Entry_Type)
+	is
+		pragma Check (Pre,
+			Check => not Is_Assigned (Parsing_Entry) or else raise Status_Error);
 	begin
 		Read (Object, Parsing_Entry.Data);
+		Parsing_Entry.Assigned := True;
 	end Get;
 	
 	procedure Get_Until_Element_End (Object : in out Reader) is

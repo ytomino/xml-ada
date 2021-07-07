@@ -126,13 +126,20 @@ package body Serialization.XML is
 					Handle_Name (Object, In_Mapping, Event, Tag);
 			end case;
 		end Process;
-		Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
 	begin
-		Standard.XML.Get (Object.Reader.all, Parsing_Entry);
-		Process (Standard.XML.Value (Parsing_Entry).Element.all);
-		if Object.Level = 0 then
+		declare
+			Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
+		begin
 			Standard.XML.Get (Object.Reader.all, Parsing_Entry);
 			Process (Standard.XML.Value (Parsing_Entry).Element.all);
+		end;
+		if Object.Level = 0 then
+			declare
+				Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
+			begin
+				Standard.XML.Get (Object.Reader.all, Parsing_Entry);
+				Process (Standard.XML.Value (Parsing_Entry).Element.all);
+			end;
 			if Object.Level = 0 then
 				raise Standard.XML.Data_Error
 					with "expected tag (""" & Tag & """) was not found.";
@@ -142,35 +149,42 @@ package body Serialization.XML is
 	
 	procedure Read_Value (
 		Object : not null access XML_Reader) is
-		Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
 	begin
-		Standard.XML.Get (Object.Reader.all, Parsing_Entry);
-		case Standard.XML.Value (Parsing_Entry).Element.Event_Type is
-			when Standard.XML.Text | Standard.XML.CDATA =>
-				Object.Next_Kind := Value;
-				Object.Next_Value :=
-					new String'(Standard.XML.Value (Parsing_Entry).Element.Content.all);
-			when Standard.XML.Element_Start =>
-				if Standard.XML.Value (Parsing_Entry).Element.Name.all =
-					Sequence_Item_Name
-				then
-					Object.Next_Kind := Enter_Sequence;
-					Object.Next_Next_Name := Sequence_Item_Name'Access;
-				else
-					Object.Next_Kind := Enter_Mapping;
-					Object.Next_Next_Name :=
-						new String'(Standard.XML.Value (Parsing_Entry).Element.Name.all);
-				end if;
-			when others =>
-				raise Standard.XML.Data_Error;
-		end case;
-		if Object.Next_Kind = Value then
+		declare
+			Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
+		begin
 			Standard.XML.Get (Object.Reader.all, Parsing_Entry);
-			if Standard.XML.Value (Parsing_Entry).Element.Event_Type /=
-				Standard.XML.Element_End
-			then
-				raise Standard.XML.Data_Error;
-			end if;
+			case Standard.XML.Value (Parsing_Entry).Element.Event_Type is
+				when Standard.XML.Text | Standard.XML.CDATA =>
+					Object.Next_Kind := Value;
+					Object.Next_Value :=
+						new String'(Standard.XML.Value (Parsing_Entry).Element.Content.all);
+				when Standard.XML.Element_Start =>
+					if Standard.XML.Value (Parsing_Entry).Element.Name.all =
+						Sequence_Item_Name
+					then
+						Object.Next_Kind := Enter_Sequence;
+						Object.Next_Next_Name := Sequence_Item_Name'Access;
+					else
+						Object.Next_Kind := Enter_Mapping;
+						Object.Next_Next_Name :=
+							new String'(Standard.XML.Value (Parsing_Entry).Element.Name.all);
+					end if;
+				when others =>
+					raise Standard.XML.Data_Error;
+			end case;
+		end;
+		if Object.Next_Kind = Value then
+			declare
+				Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
+			begin
+				Standard.XML.Get (Object.Reader.all, Parsing_Entry);
+				if Standard.XML.Value (Parsing_Entry).Element.Event_Type /=
+					Standard.XML.Element_End
+				then
+					raise Standard.XML.Data_Error;
+				end if;
+			end;
 		end if;
 	end Read_Value;
 	

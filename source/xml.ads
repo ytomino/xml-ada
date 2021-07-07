@@ -106,6 +106,18 @@ package XML is
 	
 	-- reader
 	
+	type Parsing_Entry_Type is limited private;
+	pragma Preelaborable_Initialization (Parsing_Entry_Type);
+	
+	type Event_Reference_Type (
+		Element : not null access constant Event) is null record
+		with Implicit_Dereference => Element;
+	
+	function Value (Parsing_Entry : aliased Parsing_Entry_Type)
+		return Event_Reference_Type;
+	
+	pragma Inline (Value);
+	
 	type Reader (<>) is limited private;
 	
 	function Create (
@@ -136,18 +148,6 @@ package XML is
 	procedure Get (
 		Object : in out Reader;
 		Process : not null access procedure (Event : in XML.Event));
-	
-	type Parsing_Entry_Type is limited private;
-	pragma Preelaborable_Initialization (Parsing_Entry_Type);
-	
-	type Event_Reference_Type (
-		Element : not null access constant Event) is null record
-		with Implicit_Dereference => Element;
-	
-	function Value (Parsing_Entry : aliased Parsing_Entry_Type)
-		return Event_Reference_Type;
-	
-	pragma Inline (Value);
 	
 	procedure Get (
 		Object : in out Reader;
@@ -213,12 +213,6 @@ private
 	
 	-- reader
 	
-	type Reader_State is (
-		Next,
-		Remaining,
-		Empty_Element); -- have to supplement Element_End
-	pragma Discard_Names (Reader_State);
-	
 	type Parsed_Data_Type is limited record
 		Event : aliased XML.Event;
 		Name_Constraint : aliased String_Constraint;
@@ -233,6 +227,12 @@ private
 	type Parsing_Entry_Type is limited record -- may be controlled type
 		Data : aliased Parsed_Data_Type;
 	end record;
+	
+	type Reader_State is (
+		Next,
+		Remaining,
+		Empty_Element); -- have to supplement Element_End
+	pragma Discard_Names (Reader_State);
 	
 	type Non_Controlled_Reader is record
 		Raw : C.libxml.xmlreader.xmlTextReaderPtr;

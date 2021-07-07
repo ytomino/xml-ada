@@ -349,6 +349,12 @@ package body XML is
 	
 	-- implementation of reader
 	
+	function Value (Parsing_Entry : aliased Parsing_Entry_Type)
+		return Event_Reference_Type is
+	begin
+		return (Element => Parsing_Entry.Data.Event'Access);
+	end Value;
+	
 	function Create (
 		Input : not null access procedure (Item : out String; Last : out Natural);
 		Encoding : Encoding_Type := No_Encoding;
@@ -561,12 +567,6 @@ package body XML is
 		Read (Object, Parsed_Data);
 		Process (Parsed_Data.Event);
 	end Get;
-	
-	function Value (Parsing_Entry : aliased Parsing_Entry_Type)
-		return Event_Reference_Type is
-	begin
-		return (Element => Parsing_Entry.Data.Event'Access);
-	end Value;
 	
 	procedure Get (
 		Object : in out Reader;

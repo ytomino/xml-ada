@@ -51,12 +51,28 @@ package body XML is
 		end if;
 	end Length;
 	
-	function To_String (S : access constant C.char) return String is
-		Result : String (1 .. Length (S));
+	function To_String (S : access constant C.char; Length : Natural) return String is
+		Result : String (1 .. Length);
 		for Result'Address use To_Address (C.char_const_ptr (S));
 	begin
 		return Result;
 	end To_String;
+	
+	function To_String (S : access constant C.char) return String is
+	begin
+		return To_String (S, Length (S));
+	end To_String;
+	
+	function To_String_Without_LF (S : access constant C.char) return String is
+		L : Natural := Length (S);
+		Result : String (1 .. L);
+		for Result'Address use To_Address (C.char_const_ptr (S));
+	begin
+		if L >= 1 and then Result (L) = Character'Val (10) then
+			L := L - 1;
+		end if;
+		return To_String (S, L);
+	end To_String_Without_LF;
 	
 	-- dirty trick
 	function Copy_String_Access (
@@ -1237,7 +1253,7 @@ package body XML is
 			if Error.line = 0 then
 				return "";
 			else
-				return "line" & C.signed_int'Image (Error.line) & ": ";
+				return "line" & C.signed_int'Image (Error.line - 1) & ": ";
 			end if;
 		end Location;
 	begin
@@ -1252,7 +1268,7 @@ package body XML is
 						C.libxml.xmlerror.XML_ERR_NO_MEMORY) =>
 					raise Storage_Error;
 				when others =>
-					raise Data_Error with Location & To_String (Error.message);
+					raise Data_Error with Location & To_String_Without_LF (Error.message);
 			end case;
 		end if;
 	end Raise_Error;

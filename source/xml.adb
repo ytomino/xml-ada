@@ -39,10 +39,21 @@ package body XML is
 			C.libxml.xmlstring.xmlChar_const_ptr,
 			C.char_const_ptr);
 	
-	function To_String (S : not null access constant C.char) return String is
-		Length : constant Natural := Natural (C.string.strlen (S));
-		Result : String (1 .. Length);
-		for Result'Address use S.all'Address;
+	function To_Address is
+		new Ada.Unchecked_Conversion (C.char_const_ptr, System.Address);
+	
+	function Length (S : access constant C.char) return Natural is
+	begin
+		if S = null then
+			return 0;
+		else
+			return Natural (C.string.strlen (S));
+		end if;
+	end Length;
+	
+	function To_String (S : access constant C.char) return String is
+		Result : String (1 .. Length (S));
+		for Result'Address use To_Address (C.char_const_ptr (S));
 	begin
 		return Result;
 	end To_String;

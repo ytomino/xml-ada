@@ -255,7 +255,7 @@ private
 		
 		generic
 			type Result_Type (<>) is limited private;
-			with function Process (Raw : in Non_Controlled_Reader) return Result_Type;
+			with function Process (Raw : Non_Controlled_Reader) return Result_Type;
 		function Query (Object : XML.Reader) return Result_Type;
 		pragma Inline (Query);
 		
@@ -292,7 +292,7 @@ private
 		
 		generic
 			type Result_Type (<>) is limited private;
-			with function Process (Raw : in Non_Controlled_Writer) return Result_Type;
+			with function Process (Raw : Non_Controlled_Writer) return Result_Type;
 		function Query (Object : XML.Writer) return Result_Type;
 		pragma Inline (Query);
 		

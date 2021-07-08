@@ -655,10 +655,7 @@ package body XML is
 	
 	procedure Get (
 		Object : in out Reader;
-		Parsing_Entry : out Parsing_Entry_Type)
-	is
-		pragma Check (Pre,
-			Check => not Is_Assigned (Parsing_Entry) or else raise Status_Error);
+		Parsing_Entry : out Parsing_Entry_Type) is
 	begin
 		Read (Object, Parsing_Entry.Data);
 		Parsing_Entry.Assigned := True;

@@ -147,8 +147,7 @@ package body Serialization.XML is
 		end if;
 	end Read_Name_On_Start;
 	
-	procedure Read_Value (
-		Object : not null access XML_Reader) is
+	procedure Read_Value (Object : not null access XML_Reader) is
 	begin
 		declare
 			Parsing_Entry : aliased Standard.XML.Parsing_Entry_Type;
@@ -190,9 +189,7 @@ package body Serialization.XML is
 	
 	-- implementation of reading
 	
-	function Reading (
-		Reader : not null access Standard.XML.Reader;
-		Tag : String)
+	function Reading (Reader : not null access Standard.XML.Reader; Tag : String)
 		return Reference_Type
 	is
 		pragma Suppress (Accessibility_Check);
@@ -285,17 +282,14 @@ package body Serialization.XML is
 			(Event_Type => Standard.XML.Element_Start, Name => Name'Unrestricted_Access));
 	end Write_Element_Start;
 	
-	procedure Write_Element_End (
-		Object : not null access XML_Writer) is
+	procedure Write_Element_End (Object : not null access XML_Writer) is
 	begin
 		Standard.XML.Put (Object.Writer.all, (Event_Type => Standard.XML.Element_End));
 	end Write_Element_End;
 	
 	-- implementation of writing
 	
-	function Writing (
-		Writer : not null access Standard.XML.Writer;
-		Tag : String)
+	function Writing (Writer : not null access Standard.XML.Writer; Tag : String)
 		return Reference_Type
 	is
 		pragma Suppress (Accessibility_Check);
@@ -368,8 +362,7 @@ package body Serialization.XML is
 		Object.Level := Object.Level + 1;
 	end Enter_Mapping;
 	
-	overriding procedure Leave_Mapping (
-		Object : not null access XML_Writer) is
+	overriding procedure Leave_Mapping (Object : not null access XML_Writer) is
 	begin
 		Write_Element_End (Object);
 		Object.Level := Object.Level - 1;
@@ -383,8 +376,7 @@ package body Serialization.XML is
 		Name : in String)
 		renames Enter_Mapping;
 	
-	overriding procedure Leave_Sequence (
-		Object : not null access XML_Writer)
+	overriding procedure Leave_Sequence (Object : not null access XML_Writer)
 		renames Leave_Mapping;
 	
 end Serialization.XML;

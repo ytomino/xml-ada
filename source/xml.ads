@@ -130,15 +130,11 @@ package XML is
 		URI : String := "")
 		return Reader;
 	
-	procedure Set_DTD_Loading (
-		Object : in out Reader;
-		Value : in Boolean);
+	procedure Set_DTD_Loading (Object : in out Reader; Value : in Boolean);
 	procedure Set_Default_Attributes (
 		Object : in out Reader;
 		Value : in Boolean);
-	procedure Set_Validation (
-		Object : in out Reader;
-		Value : in Boolean);
+	procedure Set_Validation (Object : in out Reader; Value : in Boolean);
 	procedure Set_Substitute_Entities (
 		Object : in out Reader;
 		Value : in Boolean);
@@ -326,8 +322,7 @@ private
 		
 		type Writer is new Ada.Finalization.Limited_Controlled
 			with record
-				Data : aliased Non_Controlled_Writer :=
-					(Raw => null, Finished => False);
+				Data : aliased Non_Controlled_Writer := (Raw => null, Finished => False);
 			end record;
 		
 		overriding procedure Finalize (Object : in out Writer);

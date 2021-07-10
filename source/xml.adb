@@ -482,10 +482,7 @@ package body XML is
 		end;
 	end Create;
 	
-	procedure Set_DTD_Loading (
-		Object : in out Reader;
-		Value : in Boolean)
-	is
+	procedure Set_DTD_Loading (Object : in out Reader; Value : in Boolean) is
 		procedure Process (NC_Object : in out Non_Controlled_Reader) is
 		begin
 			if C.libxml.xmlreader.xmlTextReaderSetParserProp (
@@ -522,10 +519,7 @@ package body XML is
 		Do_Set_Default_Attributes (Object);
 	end Set_Default_Attributes;
 	
-	procedure Set_Validation (
-		Object : in out Reader;
-		Value : in Boolean)
-	is
+	procedure Set_Validation (Object : in out Reader; Value : in Boolean) is
 		procedure Process (NC_Object : in out Non_Controlled_Reader) is
 		begin
 			if C.libxml.xmlreader.xmlTextReaderSetParserProp (
@@ -977,8 +971,7 @@ package body XML is
 	end Set_Indent;
 	
 	procedure Put (Object : in out Writer; Event : in XML.Event) is
-		pragma Check (Pre,
-			Check => not Finished (Object) or else raise Status_Error);
+		pragma Check (Pre, Check => not Finished (Object) or else raise Status_Error);
 		procedure Process (NC_Object : in out Non_Controlled_Writer) is
 		begin
 			case Event.Event_Type is
@@ -1173,8 +1166,7 @@ package body XML is
 		Encoding : Encoding_Type := No_Encoding;
 		Standalone : Standalone_Type := No_Specific)
 	is
-		pragma Check (Pre,
-			Check => not Finished (Object) or else raise Status_Error);
+		pragma Check (Pre, Check => not Finished (Object) or else raise Status_Error);
 		procedure Process (NC_Object : in out Non_Controlled_Writer) is
 			Version_Length : C.size_t := 0;
 		begin
@@ -1212,8 +1204,7 @@ package body XML is
 	end Put_Document_Start;
 	
 	procedure Put_Document_End (Object : in out Writer) is
-		pragma Check (Pre,
-			Check => not Finished (Object) or else raise Status_Error);
+		pragma Check (Pre, Check => not Finished (Object) or else raise Status_Error);
 		procedure Process (NC_Object : in out Non_Controlled_Writer) is
 		begin
 			C.libxml.xmlerror.xmlResetLastError;
@@ -1227,8 +1218,7 @@ package body XML is
 	end Put_Document_End;
 	
 	procedure Finish (Object : in out Writer) is
-		pragma Check (Pre,
-			Check => not Finished (Object) or else raise Status_Error);
+		pragma Check (Pre, Check => not Finished (Object) or else raise Status_Error);
 		procedure Process (NC_Object : in out Non_Controlled_Writer) is
 		begin
 			NC_Object.Finished := True;

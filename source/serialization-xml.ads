@@ -6,14 +6,10 @@ package Serialization.XML is
 	type Reference_Type (
 		Serializer : not null access Serialization.Serializer) is limited private;
 	
-	function Reading (
-		Reader : not null access Standard.XML.Reader;
-		Tag : String)
+	function Reading (Reader : not null access Standard.XML.Reader; Tag : String)
 		return Reference_Type;
 	
-	function Writing (
-		Writer : not null access Standard.XML.Writer;
-		Tag : String)
+	function Writing (Writer : not null access Standard.XML.Writer; Tag : String)
 		return Reference_Type;
 	
 private
@@ -73,12 +69,10 @@ private
 	overriding procedure Enter_Mapping (
 		Object : not null access XML_Writer;
 		Name : in String);
-	overriding procedure Leave_Mapping (
-		Object : not null access XML_Writer);
+	overriding procedure Leave_Mapping (Object : not null access XML_Writer);
 	overriding procedure Enter_Sequence (
 		Object : not null access XML_Writer;
 		Name : in String);
-	overriding procedure Leave_Sequence (
-		Object : not null access XML_Writer);
+	overriding procedure Leave_Sequence (Object : not null access XML_Writer);
 	
 end Serialization.XML;

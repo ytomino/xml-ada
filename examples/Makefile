@@ -30,8 +30,15 @@ else ifneq ($(findstring freebsd,$(TARGET)),)
 LFLAGS=-lpthread
 HFLAGS=-I/usr/local/$(TARGET)/include/libxml2
 else ifneq ($(findstring linux-gnu,$(TARGET)),)
-LFLAGS=
-HFLAGS:=$(shell pkg-config --cflags-only-I libxml-2.0)
+ifneq ($(WITH_XML),)
+XML_LFLAGS=-L$(WITH_XML)/lib
+XML_HFLAGS=-I$(WITH_XML)/libxml2/include
+else
+XML_LFLAGS:=$(shell pkg-config --libs-only-L libxml-2.0)
+XML_HFLAGS:=$(shell pkg-config --cflags-only-I libxml-2.0)
+endif
+LFLAGS+=$(XML_LFLAGS)
+HFLAGS+=$(XML_HFLAGS)
 endif
 endif
 

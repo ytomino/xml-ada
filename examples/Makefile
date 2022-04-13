@@ -25,10 +25,10 @@ HFLAGS=
 
 ifeq ($(TARGET),$(HOST))
 ifneq ($(findstring darwin,$(TARGET)),)
-HFLAGS=-I/usr/include/libxml2
+HFLAGS+=-I/usr/include/libxml2
 else ifneq ($(findstring freebsd,$(TARGET)),)
-LFLAGS=-lpthread
-HFLAGS=-I/usr/local/$(TARGET)/include/libxml2
+LFLAGS+=-lpthread
+HFLAGS+=-I/usr/local/$(TARGET)/include/libxml2
 else ifneq ($(findstring linux-gnu,$(TARGET)),)
 ifneq ($(WITH_XML),)
 XML_LFLAGS=-L$(WITH_XML)/lib

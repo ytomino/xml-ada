@@ -6,11 +6,11 @@ TARGET=$(HOST)
 BUILDDIR=$(TARGET).noindex
 
 ifeq ($(TARGET),$(HOST))
-GCCPREFIX=
-BINLN=bin
+ GCCPREFIX=
+ BINLN=bin
 else
-GCCPREFIX=$(TARGET)-
-BINLN=
+ GCCPREFIX=$(TARGET)-
+ BINLN=
 endif
 GCCSUFFIX=
 GCC=$(GCCPREFIX)gcc$(GCCSUFFIX)
@@ -24,45 +24,45 @@ LFLAGS=-ggdb
 HFLAGS=
 
 ifeq ($(TARGET),$(HOST))
-ifneq ($(findstring darwin,$(TARGET)),)
-HFLAGS+=-I/usr/include/libxml2
-else ifneq ($(findstring freebsd,$(TARGET)),)
-LFLAGS+=-lpthread
-HFLAGS+=-I/usr/local/$(TARGET)/include/libxml2
-else ifneq ($(findstring linux-gnu,$(TARGET)),)
-ifneq ($(WITH_XML),)
-XML_LFLAGS=-L$(WITH_XML)/lib
-XML_HFLAGS=-I$(WITH_XML)/libxml2/include
-else
-XML_LFLAGS:=$(shell pkg-config --libs-only-L libxml-2.0)
-XML_HFLAGS:=$(shell pkg-config --cflags-only-I libxml-2.0)
-endif
-LFLAGS+=$(XML_LFLAGS)
-HFLAGS+=$(XML_HFLAGS)
-endif
+ ifneq ($(findstring darwin,$(TARGET)),)
+  HFLAGS+=-I/usr/include/libxml2
+ else ifneq ($(findstring freebsd,$(TARGET)),)
+  LFLAGS+=-lpthread
+  HFLAGS+=-I/usr/local/$(TARGET)/include/libxml2
+ else ifneq ($(findstring linux-gnu,$(TARGET)),)
+  ifneq ($(WITH_XML),)
+   XML_LFLAGS=-L$(WITH_XML)/lib
+   XML_HFLAGS=-I$(WITH_XML)/libxml2/include
+  else
+   XML_LFLAGS:=$(shell pkg-config --libs-only-L libxml-2.0)
+   XML_HFLAGS:=$(shell pkg-config --cflags-only-I libxml-2.0)
+  endif
+  LFLAGS+=$(XML_LFLAGS)
+  HFLAGS+=$(XML_HFLAGS)
+ endif
 endif
 
 ifneq ($(DRAKE_RTSROOT),)
-VERSION:=$(shell $(GCC) -dumpversion)
-DRAKE_RTSDIR=$(DRAKE_RTSROOT)/$(TARGET)/$(VERSION)
+ VERSION:=$(shell $(GCC) -dumpversion)
+ DRAKE_RTSDIR=$(DRAKE_RTSROOT)/$(TARGET)/$(VERSION)
 endif
 ifneq ($(DRAKE_RTSDIR),)
-IMPORTDIR=
-GFLAGS+=--RTS=$(abspath $(DRAKE_RTSDIR))
+ IMPORTDIR=
+ GFLAGS+=--RTS=$(abspath $(DRAKE_RTSDIR))
 else
-ifneq ($(wildcard import/$(TARGET)),)
-IMPORTDIR=import/$(TARGET)
-else
-IMPORTDIR=$(BUILDDIR)/import
-endif
-MFLAGS+=-I$(IMPORTDIR)
+ ifneq ($(wildcard import/$(TARGET)),)
+  IMPORTDIR=import/$(TARGET)
+ else
+  IMPORTDIR=$(BUILDDIR)/import
+ endif
+ MFLAGS+=-I$(IMPORTDIR)
 endif
 
 ifneq ($(GCC),gcc)
-GFLAGS+=$(filter -m32 -m64,$(GCC))
-MFLAGS+=--GCC="$(GCC)"
-LFLAGS+=--GCC="$(GCC)"
-HFLAGS+=-gcc="$(GCC)"
+ GFLAGS+=$(filter -m32 -m64,$(GCC))
+ MFLAGS+=--GCC="$(GCC)"
+ LFLAGS+=--GCC="$(GCC)"
+ HFLAGS+=-gcc="$(GCC)"
 endif
 
 EXAMPLES=$(basename $(filter-out b~%,$(wildcard *.adb)))

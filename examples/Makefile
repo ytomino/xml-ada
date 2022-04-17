@@ -15,28 +15,26 @@ endif
 GCCSUFFIX=
 GCC=$(GCCPREFIX)gcc$(GCCSUFFIX)
 
-GFLAGS=
-CFLAGS=-ggdb -pipe -gnatef -gnata -gnatwa -gnatyy-3cbhms
-MFLAGS=-D $(BUILDDIR) -gnatA $(addprefix -gnatec=,$(wildcard *.adc))
-BFLAGS=-E
-LFLAGS=-ggdb
+CFLAGS=-ggdb -pipe
+CFLAGS_ADA=-gnata -gnatef -gnatwa -gnatyy-3bchms
+LDFLAGS=-ggdb
 HFLAGS=
 
 ifeq ($(TARGET),$(HOST))
  ifneq ($(findstring darwin,$(TARGET)),)
   HFLAGS+=-I/usr/include/libxml2
  else ifneq ($(findstring freebsd,$(TARGET)),)
-  LFLAGS+=-lpthread
+  LDFLAGS+=-lpthread
   HFLAGS+=-I/usr/local/$(TARGET)/include/libxml2
  else ifneq ($(findstring linux-gnu,$(TARGET)),)
   ifneq ($(WITH_XML),)
-   XML_LFLAGS=-L$(WITH_XML)/lib
+   XML_LDFLAGS=-L$(WITH_XML)/lib
    XML_HFLAGS=-I$(WITH_XML)/libxml2/include
   else
-   XML_LFLAGS:=$(shell pkg-config --libs-only-L libxml-2.0)
+   XML_LDFLAGS:=$(shell pkg-config --libs-only-L libxml-2.0)
    XML_HFLAGS:=$(shell pkg-config --cflags-only-I libxml-2.0)
   endif
-  LFLAGS+=$(XML_LFLAGS)
+  LDFLAGS+=$(XML_LDFLAGS)
   HFLAGS+=$(XML_HFLAGS)
  endif
 endif
@@ -47,21 +45,26 @@ ifneq ($(DRAKE_RTSROOT),)
 endif
 ifneq ($(DRAKE_RTSDIR),)
  IMPORTDIR=
- GFLAGS+=--RTS=$(abspath $(DRAKE_RTSDIR))
 else
  ifneq ($(wildcard import/$(TARGET)),)
   IMPORTDIR=import/$(TARGET)
  else
   IMPORTDIR=$(BUILDDIR)/import
  endif
- MFLAGS+=-I$(IMPORTDIR)
 endif
 
+GARGS=$(addprefix --RTS=,$(abspath $(DRAKE_RTSDIR)))
+MARGS=-D $(BUILDDIR) -gnatA $(addprefix -gnatec=,$(wildcard *.adc)) \
+      $(addprefix -I,$(IMPORTDIR))
+CARGS=$(CFLAGS) $(CFLAGS_ADA)
+BARGS=-E
+LARGS=$(LDFLAGS)
+
 ifneq ($(GCC),gcc)
- GFLAGS+=$(filter -m32 -m64,$(GCC))
- MFLAGS+=--GCC="$(GCC)"
- LFLAGS+=--GCC="$(GCC)"
  HFLAGS+=-gcc="$(GCC)"
+ GARGS+=$(filter -m32 -m64,$(GCC))
+ MARGS+=--GCC="$(GCC)"
+ LARGS+=--GCC="$(GCC)"
 endif
 
 EXAMPLES=$(basename $(filter-out b~%,$(wildcard *.adb)))
@@ -72,15 +75,18 @@ TESTS=$(filter test_%,$(EXAMPLES))
 all: $(addprefix $(BUILDDIR)/,$(EXAMPLES)) $(BINLN)
 
 $(BUILDDIR)/%: %.adb $(wildcard $(SOURCEDIR)/*) | $(BUILDDIR) $(IMPORTDIR)
-	$(GCCPREFIX)gnatmake$(GCCSUFFIX) -c -I$(SOURCEDIR) $< $(GFLAGS) $(MFLAGS) -cargs $(CFLAGS)
-	cd $(BUILDDIR) && $(GCCPREFIX)gnatbind$(GCCSUFFIX) $(basename $(notdir $<)).ali $(GFLAGS) $(BFLAGS)
-	cd $(BUILDDIR) && $(GCCPREFIX)gnatlink$(GCCSUFFIX) -o ../$@ $(basename $(notdir $<)).ali $(GFLAGS) $(LFLAGS)
+	$(GCCPREFIX)gnatmake$(GCCSUFFIX) -c -I$(SOURCEDIR) $< $(GARGS) $(MARGS) \
+		-cargs $(CARGS)
+	cd $(BUILDDIR) && $(GCCPREFIX)gnatbind$(GCCSUFFIX) \
+		$(basename $(notdir $<)).ali $(GARGS) $(BARGS)
+	cd $(BUILDDIR) && $(GCCPREFIX)gnatlink$(GCCSUFFIX) -o ../$@ \
+		$(basename $(notdir $<)).ali $(GARGS) $(LARGS)
 
 # make test_serialize YAMLDIR=yaml-ada/source
 
 YAMLDIR=../../yaml-ada/source
 
-$(BUILDDIR)/test_serialize: MFLAGS+=-I$(YAMLDIR)
+$(BUILDDIR)/test_serialize: MARGS+=-I$(YAMLDIR)
 
 $(BUILDDIR):
 	mkdir $(BUILDDIR)
